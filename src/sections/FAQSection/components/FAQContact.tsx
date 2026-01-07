@@ -14,7 +14,7 @@ export const FAQContact = () => {
           </div>
           <div className="relative box-border caret-transparent basis-0 grow shrink-0 h-[76px] w-px">
             <a
-              href="mailto://support@everwin.trade"
+              href="mailto://support@everwintrade.com"
               className="relative text-blue-700 content-center items-center bg-emerald-500/10 box-border caret-transparent gap-x-2.5 flex h-full justify-center gap-y-2.5 w-full overflow-hidden p-2 rounded-2xl"
             >
               <div className="relative content-center items-center bg-emerald-500 box-border caret-transparent gap-x-2 flex basis-0 grow shrink-0 h-full justify-center gap-y-2 w-px p-4 rounded-lg">
@@ -80,7 +80,7 @@ export const FAQContact = () => {
                 <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start text-nowrap">
                   <p className="text-emerald-500 text-base box-border caret-transparent leading-7 text-center text-nowrap font-bricolage_grotesque">
                     <a
-                      href="https://avalonbroker.com/affiliate"
+                      href="https://everwintrade.com/affiliate"
                       className="box-border caret-transparent text-nowrap"
                     >
                       Be a partner
@@ -100,7 +100,7 @@ export const FAQContact = () => {
                   <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start text-nowrap">
                     <p className="text-gray-500 text-base box-border caret-transparent leading-7 text-center text-nowrap font-bricolage_grotesque">
                       <a
-                        href="https://avalonbroker.com/legal/privacy"
+                        href="https://everwintrade.com/legal/privacy"
                         className="box-border caret-transparent text-nowrap"
                       >
                         Privacy
@@ -110,7 +110,7 @@ export const FAQContact = () => {
                   <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start text-nowrap">
                     <p className="text-gray-500 text-base box-border caret-transparent leading-7 text-center text-nowrap font-bricolage_grotesque">
                       <a
-                        href="https://avalonbroker.com/legal/payment-policy"
+                        href="https://everwintrade.com/legal/payment-policy"
                         className="box-border caret-transparent text-nowrap"
                       >
                         Payment
@@ -120,7 +120,7 @@ export const FAQContact = () => {
                   <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start text-nowrap">
                     <p className="text-gray-500 text-base box-border caret-transparent leading-7 text-center text-nowrap font-bricolage_grotesque">
                       <a
-                        href="https://avalonbroker.com/legal/general-fees"
+                        href="https://everwintrade.com/legal/general-fees"
                         className="box-border caret-transparent text-nowrap"
                       >
                         General Fees
@@ -130,7 +130,7 @@ export const FAQContact = () => {
                   <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start text-nowrap">
                     <p className="text-gray-500 text-base box-border caret-transparent leading-7 text-center text-nowrap font-bricolage_grotesque">
                       <a
-                        href="https://avalonbroker.com/legal/terms"
+                        href="https://everwintrade.com/legal/terms"
                         className="box-border caret-transparent text-nowrap"
                       >
                         Terms and conditions
@@ -140,7 +140,7 @@ export const FAQContact = () => {
                   <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start text-nowrap">
                     <p className="text-gray-500 text-base box-border caret-transparent leading-7 text-center text-nowrap font-bricolage_grotesque">
                       <a
-                        href="https://avalonbroker.com/legal/aml"
+                        href="https://everwintrade.com/legal/aml"
                         className="box-border caret-transparent text-nowrap"
                       >
                         Legal AML
@@ -161,7 +161,7 @@ export const FAQContact = () => {
                   <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start text-nowrap">
                     <p className="text-gray-500 text-base box-border caret-transparent leading-7 text-center text-nowrap font-bricolage_grotesque">
                       <a
-                        href="https://avalonbroker.com/legal/withdrawal-policy"
+                        href="https://everwintrade.com/legal/withdrawal-policy"
                         className="box-border caret-transparent text-nowrap"
                       >
                         Withdrawal Policy
@@ -171,7 +171,7 @@ export const FAQContact = () => {
                   <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start text-nowrap">
                     <p className="text-gray-500 text-base box-border caret-transparent leading-7 text-center text-nowrap font-bricolage_grotesque">
                       <a
-                        href="https://avalonbroker.com/legal/risk-disclosure"
+                        href="https://everwintrade.com/legal/risk-disclosure"
                         className="box-border caret-transparent text-nowrap"
                       >
                         Risk Disclosure
@@ -181,7 +181,7 @@ export const FAQContact = () => {
                   <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start text-nowrap">
                     <p className="text-gray-500 text-base box-border caret-transparent leading-7 text-center text-nowrap font-bricolage_grotesque">
                       <a
-                        href="https://avalonbroker.com/legal/order-execution"
+                        href="https://everwintrade.com/legal/order-execution"
                         className="box-border caret-transparent text-nowrap"
                       >
                         Order Fulfillment
@@ -191,7 +191,7 @@ export const FAQContact = () => {
                   <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start text-nowrap">
                     <p className="text-gray-500 text-base box-border caret-transparent leading-7 text-center text-nowrap font-bricolage_grotesque">
                       <a
-                        href="https://avalonbroker.com/legal/margin-trading"
+                        href="https://everwintrade.com/legal/margin-trading"
                         className="box-border caret-transparent text-nowrap"
                       >
                         Margin Trading
@@ -201,7 +201,7 @@ export const FAQContact = () => {
                   <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start text-nowrap">
                     <p className="text-gray-500 text-base box-border caret-transparent leading-7 text-center text-nowrap font-bricolage_grotesque">
                       <a
-                        href="https://avalonbroker.com/legal/cookies"
+                        href="https://everwintrade.com/legal/cookies"
                         className="box-border caret-transparent text-nowrap"
                       >
                         Cookies
@@ -211,7 +211,7 @@ export const FAQContact = () => {
                   <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start text-nowrap">
                     <p className="text-gray-500 text-base box-border caret-transparent leading-7 text-center text-nowrap font-bricolage_grotesque">
                       <a
-                        href="https://avalonbroker.com/legal/demo-accounts"
+                        href="https://everwintrade.com/legal/demo-accounts"
                         className="box-border caret-transparent text-nowrap"
                       >
                         Demo and tournament
@@ -235,9 +235,9 @@ export const FAQContact = () => {
           <p className="text-gray-500 box-border caret-transparent leading-6 break-words font-bricolage_grotesque">
             Financial operations on this site may involve risks. Using the tools
             and services provided here may lead to financial losses, including
-            the total loss of funds in your Avalon account. Assess the risks and
+            the total loss of funds in your Everwin account. Assess the risks and
             speak with an independent financial advisor before making any
-            trades. Avalon is not responsible for any direct, indirect,
+            trades. Everwin is not responsible for any direct, indirect,
             consequential losses or any other damages arising from the
             user&#39;s actions on the platform.
           </p>
@@ -245,10 +245,10 @@ export const FAQContact = () => {
             <br className="box-border caret-transparent break-words" />
           </p>
           <p className="text-gray-500 box-border caret-transparent leading-6 break-words font-bricolage_grotesque">
-            Avalon and any of its services are not intended for or offered to
-            residents of Brazil. Avalon does not advertise its services in
+            Everwin and any of its services are not intended for or offered to
+            residents of Brazil. Everwin does not advertise its services in
             Brazil or to users residing in Brazil, and no content on this
-            website should be interpreted in this way. Avalon is not authorized
+            website should be interpreted in this way. Everwin is not authorized
             by the Brazilian Securities and Exchange Commission to publicly
             offer or broker offerings of securities in Brazil. By accessing the
             Av decl aw agree to the indicated herein.
@@ -257,37 +257,25 @@ export const FAQContact = () => {
             <br className="box-border caret-transparent break-words" />
           </p>
           <p className="text-gray-500 box-border caret-transparent leading-6 break-words font-bricolage_grotesque">
-            Avalon does not open accounts for residents or citizens of countries
+            Everwin does not open accounts for residents or citizens of countries
             or jurisdictions subject to international high-risk lists or
             AML/CFT-related sanctions, including but not limited to: Brazil, the
             United States, the European Union, the United Kingdom, Canada,
             Israel, North Korea, Iran, Myanmar, Syria, Sudan, Cuba, and any
             other country identified by the FATF as High-Risk or Under Increased
             Monitoring. Users located in these regions are not eligible to use
-            Avalon&#39;s services, and it is the user&#39;s sole responsibility
+            Everwin&#39;s services, and it is the user&#39;s sole responsibility
             to ensure that accessing the platform is permitted under the laws
             oftheir jurisdiction.
           </p>
           <p className="text-gray-500 box-border caret-transparent leading-6 break-words font-bricolage_grotesque">
             <br className="box-border caret-transparent break-words" />
           </p>
-          <p className="text-gray-500 box-border caret-transparent leading-6 break-words font-bricolage_grotesque">
-            We have become aware that some unrelated brokers are improperly
-            claiming to operate under the Direct Response Angels Marketing Corp.
-            license. We clarify that Avalon is the sole brand authorized under
-            this license, and any third party using it does so without
-            permission or affiliation.
-          </p>
-          <p className="text-gray-500 box-border caret-transparent leading-6 break-words font-bricolage_grotesque">
-            Direct Response Angels Marketing Corp. Address: Hunkins Waterfront
-            Plaza, Suite 556, Main Street, Charlestown, Nevis. Registration
-            number: 57466
-          </p>
         </div>
         <div className="relative content-center items-center box-border caret-transparent flex shrink-0 h-min justify-between max-w-[1060px] w-[90%]">
           <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start text-nowrap">
             <p className="text-white text-sm font-light box-border caret-transparent leading-7 text-nowrap font-bricolage_grotesque">
-              © 2026 Avalon Broker, All rights reserved.
+              © 2026 Everwin, All rights reserved.
             </p>
           </div>
           <div className="relative content-center items-center box-border caret-transparent gap-x-6 flex shrink-0 h-min justify-start gap-y-6 w-min">
@@ -297,7 +285,7 @@ export const FAQContact = () => {
               </p>
             </div>
             <a
-              href="https://www.instagram.com/avalonbroker.pt"
+              href="https://www.instagram.com/everwintrade"
               className="relative text-blue-700 bg-[url(data:image/svg+xml,<svg%20xmlns=\%22http://www.w3.org/2000/svg\%22%20xmlns:xlink=\%22http://www.w3.org/1999/xlink\%22%20viewBox=\%220%200%2022%2022\%22><g%20transform=\%22translate%280.222%200.243)] bg-size-[100%_100%] box-border caret-transparent block shrink-0 h-[22px] w-[22px]"
             ></a>
           </div>
