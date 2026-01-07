@@ -214,7 +214,7 @@ export const FAQContact = () => {
                         href="https://everwintrade.com/legal/demo-accounts"
                         className="box-border caret-transparent text-nowrap"
                       >
-                        Demo and tournament
+                        Demo & tournament
                       </a>
                     </p>
                   </div>
