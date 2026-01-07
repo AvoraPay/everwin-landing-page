@@ -251,7 +251,7 @@ export const FAQContact = () => {
             website should be interpreted in this way. Everwin is not authorized
             by the Brazilian Securities and Exchange Commission to publicly
             offer or broker offerings of securities in Brazil. By accessing the
-            Av decl aw agree to the indicated herein.
+            Everwin platform, users confirm that they agree with it.
           </p>
           <p className="text-gray-500 box-border caret-transparent leading-6 break-words font-bricolage_grotesque">
             <br className="box-border caret-transparent break-words" />
