@@ -1,4 +1,4 @@
-// everwin-page/src/sections/Footer/components/FooterContent.tsx
+// everwin-page/src/sections/Footer/components/FooterContent.ts
 import { Link } from "react-router-dom";
 
 
