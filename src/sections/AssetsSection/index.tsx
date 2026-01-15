@@ -3,7 +3,7 @@ import { TradingViewTickerTape } from "./components/AssetCarousel";
 
 export function AssetsSection() {
   return (
-    <section className="w-full bg-gray-100 border-t border-gray-200/60 py-20 md:py-24">
+    <section id="assets" className="w-full bg-gray-100 border-t border-gray-200/60 py-20 md:py-24">
       <div className="mx-auto w-[92%] max-w-[1060px]">
         <div className="flex flex-col items-center gap-8">
           <div className="flex flex-col items-center gap-8 md:flex-row md:items-start md:gap-10">

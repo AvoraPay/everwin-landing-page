@@ -3,7 +3,7 @@ import { FAQList } from "./components/FAQList";
 
 export const FAQSection = () => {
   return (
-    <section className="relative w-full overflow-hidden pt-[90px] pb-20">
+    <section id="faq" className="relative w-full overflow-hidden pt-[90px] pb-20">
       <div className="mx-auto w-[90%] max-w-[1060px]">
         <div className="flex w-full flex-col items-center gap-y-6">
           <h2 className="text-center font-bricolage_grotesque text-[38px] font-semibold leading-[44px] text-gray-800 md:text-[52px] md:leading-[62.4px]">

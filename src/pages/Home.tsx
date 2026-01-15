@@ -22,7 +22,7 @@ export default function Home() {
     <div className="w-full">
       <Hero />
 
-      <div className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[1600px]">
         <AssetsSection />
         <DepositWithdrawalSection />
         <TradingSection />

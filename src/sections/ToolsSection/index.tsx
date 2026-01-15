@@ -59,7 +59,7 @@ export const ToolsSection = () => {
   }, [base, symbols]);
 
   return (
-    <section className="relative w-full py-0 md:py-8">
+   <section id="tools" className="relative w-full py-0 md:py-8">
       <div className="mx-auto w-[90%] max-w-[1060px]">
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           {/* HEADER (span 2 no desktop) */}
