@@ -1,14 +1,37 @@
-export default function DemoAccountsPage() {
+// src/pages/legal/demo-accounts.tsx
+import { LegalPageShell } from "./LegalPageShell";
+import { LegalPageBody } from "./_ui";
+
+export default function DemoAccountsPolicy() {
   return (
-    <main className="w-full">
-      <section className="mx-auto w-[90%] max-w-[1060px] py-16">
-        <h1 className="text-gray-900 text-3xl font-semibold font-bricolage_grotesque">
-          Demo Accounts
-        </h1>
-        <p className="mt-4 text-gray-600 leading-7 font-bricolage_grotesque">
-          Content coming soon.
+    <LegalPageShell
+      title="Demo Accounts"
+      updated="January 2026"
+      lead="Important information about demo environments and simulated trading."
+    >
+      <LegalPageBody>
+        <p>
+          Demo accounts (where available) are designed for educational and testing purposes.
+          Demo conditions may differ from real environments in pricing, execution, and availability.
         </p>
-      </section>
-    </main>
+
+        <h3>1. No real-world equivalence</h3>
+        <p>
+          Demo outcomes do not reflect real-world results. Live markets involve liquidity,
+          slippage, fees, and latency.
+        </p>
+
+        <h3>2. Limitations and resets</h3>
+        <p>
+          We may limit demo access, reset balances, or discontinue demo features at any time.
+        </p>
+
+        <h3>3. No guarantee</h3>
+        <p>
+          We do not guarantee uninterrupted demo availability or that demo features reflect
+          current live conditions.
+        </p>
+      </LegalPageBody>
+    </LegalPageShell>
   );
 }

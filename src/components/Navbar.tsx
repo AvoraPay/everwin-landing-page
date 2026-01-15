@@ -10,13 +10,14 @@ const LINKS = {
 };
 
 const NAV_ITEMS = [
-  { label: "Home", href: "#top" },
-  { label: "Assets", href: "#assets" },
-  { label: "Tools", href: "#tools" },
-  { label: "Tutorials", href: "#tutorials" },
-  { label: "Support", href: "#support" },
-  { label: "FAQ", href: "#faq" },
+  { label: "Home", href: "/#top" },
+  { label: "Assets", href: "/#assets" },
+  { label: "Tools", href: "/#tools" },
+  { label: "Tutorials", href: "/#tutorials" },
+  { label: "Support", href: "/#support" },
+  { label: "FAQ", href: "/#faq" },
 ];
+
 
 function useIsDesktop(minWidth = 768) {
   const [isDesktop, setIsDesktop] = useState(() => {

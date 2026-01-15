@@ -1,14 +1,48 @@
-export default function AMLPolicyPage() {
+// src/pages/legal/aml.tsx
+import { LegalPageShell } from "./LegalPageShell";
+import { LegalPageBody } from "./_ui";
+
+export default function AMLKYCPolicy() {
   return (
-    <main className="w-full">
-      <section className="mx-auto w-[90%] max-w-[1060px] py-16">
-        <h1 className="text-gray-900 text-3xl font-semibold font-bricolage_grotesque">
-          AML Policy
-        </h1>
-        <p className="mt-4 text-gray-600 leading-7 font-bricolage_grotesque">
-          Content coming soon.
+    <LegalPageShell
+      title="AML & KYC Policy"
+      updated="January 2026"
+      lead="Everwin’s approach to preventing money laundering, terrorist financing, and fraud."
+    >
+      <LegalPageBody>
+        <p>
+          Everwin maintains procedures designed to prevent money laundering, terrorist financing,
+          and fraud, consistent with applicable legal and compliance expectations.
         </p>
-      </section>
-    </main>
+
+        <h3>1. Customer identification (KYC)</h3>
+        <p>
+          We may request identity documentation and additional information to verify your identity
+          and assess risk. Failure to provide required information may restrict access to features.
+        </p>
+
+        <h3>2. Monitoring and controls</h3>
+        <p>
+          We may monitor activity for suspicious patterns. We may request additional information
+          related to source of funds, ownership, or transaction purpose.
+        </p>
+
+        <h3>3. Restrictions</h3>
+        <p>
+          We may restrict access based on jurisdictional limitations, sanctions programs, and high-risk
+          lists, where applicable.
+        </p>
+
+        <h3>4. Reporting and cooperation</h3>
+        <p>
+          We may cooperate with lawful requests and report suspicious activity where required.
+        </p>
+
+        <h3>5. Record retention</h3>
+        <p>
+          We may retain AML/KYC records for periods required by law and for legitimate operational needs.
+        </p>
+      </LegalPageBody>
+    </LegalPageShell>
   );
 }

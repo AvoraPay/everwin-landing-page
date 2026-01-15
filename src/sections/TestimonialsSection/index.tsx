@@ -50,7 +50,7 @@ export const TestimonialsSection = () => {
             <div className="relative box-border caret-transparent gap-x-6 basis-0 grow shrink-0 h-px gap-y-6 w-full overflow-hidden rounded-2xl">
               <div className="absolute box-border caret-transparent rounded-2xl inset-0">
                 <img
-                  src="https://framerusercontent.com/images/eHU6PpGY1eSDVRjUFwerbQ264.jpg?width=760&height=478"
+                  src="https://i.ibb.co/bgmnj7JW/image2-everywin.png"
                   alt=""
                   className="aspect-[auto_760_/_478] box-border caret-transparent h-full object-cover w-full rounded-2xl"
                 />
@@ -108,7 +108,7 @@ export const TestimonialsSection = () => {
             <div className="relative box-border caret-transparent gap-x-6 basis-0 grow shrink-0 h-px min-h-[200px] gap-y-6 w-full overflow-hidden rounded-2xl">
               <div className="absolute box-border caret-transparent rounded-2xl inset-0">
                 <img
-                  src="https://framerusercontent.com/images/3IjHoWiwwiekZqIX7clqwFxCk.webp?width=341&height=307"
+                  src="https://i.ibb.co/HLTChCpB/image-4-2.png"
                   alt=""
                   className="aspect-[auto_341_/_307] box-border caret-transparent h-full object-cover w-full rounded-2xl"
                 />

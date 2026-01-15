@@ -4,7 +4,7 @@ export const TutorialsImage = () => {
     <div className="relative aspect-[1.47948_/_1] box-border caret-transparent shrink-0 min-h-[auto] min-w-[auto] translate-y-[-50.0%] w-[150%] z-[1] right-auto top-auto md:absolute md:min-h-0 md:min-w-0 md:right-[-230px] md:w-4/5 md:top-2/4">
       <div className="absolute box-border caret-transparent inset-0">
         <img
-          src="https://framerusercontent.com/images/mJo8skN0iA4SACgsvmstfi6dcuk.webp?width=1477&height=999"
+          src="https://i.ibb.co/GQ1ns5mj/image-3.png"
           alt=""
           className="aspect-[auto_1477_/_999] box-border caret-transparent h-full object-cover w-full"
         />

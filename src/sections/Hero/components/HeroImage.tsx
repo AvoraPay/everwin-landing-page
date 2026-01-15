@@ -4,7 +4,7 @@ export const HeroImage = () => {
     <div className="relative w-full overflow-hidden rounded-t-[34px] border border-gray-800/50 bg-gray-900">
       <div className="aspect-[1600/882] w-full">
         <img
-          src="https://framerusercontent.com/images/JmWTKsdwiSENaHzypnHLWVbytw.webp?width=1600&height=882"
+          src="https://i.ibb.co/KpRmZjB8/hero.png?width=1600&height=882"
           alt=""
           className="h-full w-full object-cover mix-blend-exclusion"
           draggable={false}

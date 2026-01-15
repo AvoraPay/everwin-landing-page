@@ -1,14 +1,43 @@
-export default function OrderExecutionPage() {
+// src/pages/legal/order-execution.tsx
+import { LegalPageShell } from "./LegalPageShell";
+import { LegalPageBody } from "./_ui";
+
+export default function OrderExecutionPolicy() {
   return (
-    <main className="w-full">
-      <section className="mx-auto w-[90%] max-w-[1060px] py-16">
-        <h1 className="text-gray-900 text-3xl font-semibold font-bricolage_grotesque">
-          Order Execution
-        </h1>
-        <p className="mt-4 text-gray-600 leading-7 font-bricolage_grotesque">
-          Content coming soon.
+    <LegalPageShell
+      title="Order Execution Policy"
+      updated="January 2026"
+      lead="How orders and requests may be processed and executed through the Services."
+    >
+      <LegalPageBody>
+        <p>
+          This policy describes general principles and conditions that may apply to order
+          processing and execution (where applicable).
         </p>
-      </section>
-    </main>
+
+        <h3>1. Execution approach</h3>
+        <ul>
+          <li>We aim to process orders fairly and consistently.</li>
+          <li>Execution may be affected by volatility, liquidity, and technical constraints.</li>
+        </ul>
+
+        <h3>2. Indicative pricing</h3>
+        <p>
+          Displayed prices and charts may be indicative and can differ from executed prices due
+          to latency, provider conditions, and market movements.
+        </p>
+
+        <h3>3. Rejections, cancellations, and corrections</h3>
+        <p>
+          We may refuse, cancel, or reverse processing in cases of suspected fraud, technical errors,
+          compliance concerns, platform integrity protection, or legal requirements.
+        </p>
+
+        <h3>4. Recordkeeping</h3>
+        <p>
+          We may maintain logs for security, compliance, audit, and dispute resolution.
+        </p>
+      </LegalPageBody>
+    </LegalPageShell>
   );
 }

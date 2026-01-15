@@ -1,14 +1,12 @@
-export default function AffiliatePage() {
+export default function Affiliate() {
   return (
-    <main className="w-full">
-      <section className="mx-auto w-[90%] max-w-[1060px] py-16">
-        <h1 className="text-gray-900 text-3xl font-semibold font-bricolage_grotesque">
-          Partner Program
-        </h1>
-        <p className="mt-4 text-gray-600 leading-7 font-bricolage_grotesque">
-          Content coming soon.
-        </p>
-      </section>
-    </main>
+    <div className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8 py-16">
+      <h1 className="text-3xl font-bold font-bricolage_grotesque text-gray-900">
+        Affiliate Program
+      </h1>
+      <p className="mt-4 text-gray-600 font-bricolage_grotesque">
+        Content coming soon.
+      </p>
+    </div>
   );
 }
