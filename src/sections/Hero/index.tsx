@@ -1,4 +1,4 @@
-// everwin-page/src/sections/Hero/index.tsx
+// everwin-page/src/sections/Hero/index.ts
 import { HeroContent } from "./components/HeroContent";
 
 export const Hero = () => {

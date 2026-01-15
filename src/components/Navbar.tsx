@@ -2,22 +2,21 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const LINKS = {
-  home: "https://everwintrade.com/",
   login: "https://trade.everwintrade.com/pt/login",
   register: "https://trade.everwintrade.com/rn/register",
 };
 
 const NAV_ITEMS = [
-  { label: "Home", href: "/#top" },
-  { label: "Assets", href: "/#assets" },
-  { label: "Tools", href: "/#tools" },
-  { label: "Tutorials", href: "/#tutorials" },
-  { label: "Support", href: "/#support" },
-  { label: "FAQ", href: "/#faq" },
+  { label: "Home", id: "top" },
+  { label: "Assets", id: "assets" },
+  { label: "Tools", id: "tools" },
+  { label: "Tutorials", id: "tutorials" },
+  { label: "Support", id: "support" },
+  { label: "FAQ", id: "faq" },
 ];
-
 
 function useIsDesktop(minWidth = 768) {
   const [isDesktop, setIsDesktop] = useState(() => {
@@ -83,6 +82,9 @@ const FlagPT = ({ className = "" }: { className?: string }) => (
 export const Navbar = () => {
   const isDesktop = useIsDesktop(768);
 
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [locale, setLocale] = useState<Locale>(getInitialLocale);
@@ -120,9 +122,36 @@ export const Navbar = () => {
 
   const barHeight = isDesktop ? 78 : 64;
 
-  const onNavClick = () => {
+  const closeOverlays = () => {
     setDrawerOpen(false);
     setLangOpen(false);
+  };
+
+  // ✅ scroll sem # na URL
+  const scrollToId = (id: string) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    // Compensa navbar fixa
+    const y = el.getBoundingClientRect().top + window.scrollY - 90;
+    window.scrollTo({ top: y, behavior: "smooth" });
+  };
+
+  // ✅ clique do menu: se não estiver na home, volta pra home e depois rola
+  const onNavItem = (id: string) => {
+    closeOverlays();
+
+    if (location.pathname !== "/") {
+      navigate("/", { replace: false });
+      // espera o render da home antes de procurar o elemento
+      requestAnimationFrame(() => {
+        // 2 frames costuma ser mais estável com layout pesado
+        requestAnimationFrame(() => scrollToId(id));
+      });
+      return;
+    }
+
+    scrollToId(id);
   };
 
   const LanguageButton = useMemo(() => {
@@ -161,6 +190,8 @@ export const Navbar = () => {
               <span className="text-white text-sm font-bricolage_grotesque">English</span>
             </button>
 
+            {/* Se quiser reativar PT depois, descomenta */}
+            {/*
             <button
               type="button"
               onClick={() => {
@@ -174,6 +205,7 @@ export const Navbar = () => {
               </span>
               <span className="text-white text-sm font-bricolage_grotesque">Português</span>
             </button>
+            */}
           </div>
         )}
       </div>
@@ -206,8 +238,13 @@ export const Navbar = () => {
                 </button>
               )}
 
-              <a
-                href={LINKS.home}
+              <button
+                type="button"
+                onClick={() => {
+                  closeOverlays();
+                  if (location.pathname !== "/") navigate("/");
+                  requestAnimationFrame(() => scrollToId("top"));
+                }}
                 className="block h-[34px] md:h-[38px] w-[120px] md:w-[130px]"
                 aria-label="Everwin Home"
               >
@@ -217,31 +254,32 @@ export const Navbar = () => {
                   className="h-full w-full object-contain"
                   draggable={false}
                 />
-              </a>
+              </button>
             </div>
 
             {/* CENTER: desktop nav */}
             {isDesktop && (
               <nav className="flex items-center gap-6">
                 {NAV_ITEMS.map((it) => (
-                  <a
-                    key={it.href}
-                    href={it.href}
+                  <button
+                    key={it.id}
+                    type="button"
+                    onClick={() => onNavItem(it.id)}
                     className="text-white/90 hover:text-white transition font-bricolage_grotesque text-sm"
                   >
                     {it.label}
-                  </a>
+                  </button>
                 ))}
               </nav>
             )}
 
-            {/* RIGHT: actions + language (language only on desktop, and after buttons) */}
+            {/* RIGHT: actions + language */}
             <div className="flex items-center gap-2">
               <a
                 href={LINKS.login}
                 className="inline-flex items-center justify-center h-10 px-4 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-white hover:bg-white hover:text-emerald-700 hover:border-white transition font-bricolage_grotesque text-sm"
               >
-                Entrar
+                Login
               </a>
 
               <a
@@ -249,11 +287,10 @@ export const Navbar = () => {
                 className="inline-flex items-center justify-center p-1 rounded-xl bg-emerald-500/20 hover:bg-white transition"
               >
                 <span className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-emerald-500 text-white hover:bg-white hover:text-emerald-700 transition font-bricolage_grotesque text-sm font-medium">
-                  Cadastrar
+                  Create account
                 </span>
               </a>
 
-              {/* ✅ desktop: bandeira à direita dos botões */}
               {isDesktop && LanguageButton}
             </div>
           </div>
@@ -300,18 +337,17 @@ export const Navbar = () => {
                 </svg>
               </button>
 
-              {/* ✅ mobile: bandeira no menu, canto superior direito */}
               {LanguageButton}
             </div>
 
             {/* nav list */}
             <div className="px-2 py-2">
               {NAV_ITEMS.map((it) => (
-                <a
-                  key={it.href}
-                  href={it.href}
-                  onClick={onNavClick}
-                  className="flex items-center justify-between px-4 py-4 rounded-lg hover:bg-white/10 transition"
+                <button
+                  key={it.id}
+                  type="button"
+                  onClick={() => onNavItem(it.id)}
+                  className="w-full flex items-center justify-between px-4 py-4 rounded-lg hover:bg-white/10 transition"
                 >
                   <span className="text-white font-bricolage_grotesque text-[18px]">
                     {it.label}
@@ -319,7 +355,7 @@ export const Navbar = () => {
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-white/60">
                     <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                   </svg>
-                </a>
+                </button>
               ))}
             </div>
 
@@ -328,18 +364,18 @@ export const Navbar = () => {
               <div className="flex flex-col gap-2">
                 <a
                   href={LINKS.login}
-                  onClick={onNavClick}
+                  onClick={closeOverlays}
                   className="w-full inline-flex items-center justify-center h-11 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-white hover:bg-white hover:text-emerald-700 hover:border-white transition font-bricolage_grotesque"
                 >
-                  Entrar
+                  Login
                 </a>
 
                 <a
                   href={LINKS.register}
-                  onClick={onNavClick}
+                  onClick={closeOverlays}
                   className="w-full inline-flex items-center justify-center h-11 rounded-lg bg-emerald-500 text-white hover:bg-white hover:text-emerald-700 transition font-bricolage_grotesque font-medium"
                 >
-                  Cadastrar
+                  Create account
                 </a>
               </div>
             </div>
