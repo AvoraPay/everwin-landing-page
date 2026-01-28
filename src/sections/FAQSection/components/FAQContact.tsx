@@ -14,7 +14,7 @@ export const FAQContact = () => {
           </div>
           <div className="relative box-border caret-transparent basis-0 grow shrink-0 h-[76px] w-px">
             <a
-              href="mailto://support@everwintrade.com"
+              href="mailto://support@everwin.trade"
               className="relative text-blue-700 content-center items-center bg-emerald-500/10 box-border caret-transparent gap-x-2.5 flex h-full justify-center gap-y-2.5 w-full overflow-hidden p-2 rounded-2xl"
             >
               <div className="relative content-center items-center bg-emerald-500 box-border caret-transparent gap-x-2 flex basis-0 grow shrink-0 h-full justify-center gap-y-2 w-px p-4 rounded-lg">

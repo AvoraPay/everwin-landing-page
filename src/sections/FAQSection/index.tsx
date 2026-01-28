@@ -18,7 +18,7 @@ export const FAQSection = () => {
 
           <div className="w-full md:max-w-[260px]">
             <a
-              href="https://trade.everwintrade.com/en/register"
+              href="https://trade.everwin.trade/en/register"
               className="flex h-[76px] w-full items-center justify-center rounded-2xl bg-emerald-500/10 p-2"
             >
               <div className="flex h-full w-full items-center justify-center rounded-lg bg-emerald-500 px-6">

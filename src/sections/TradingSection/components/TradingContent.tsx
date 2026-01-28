@@ -15,7 +15,7 @@ export const TradingContent = () => {
 
       <div className="mt-10 flex flex-col gap-6 md:flex-row md:items-center">
         <a
-          href="https://trade.everwintrade.com/en/register"
+          href="https://trade.everwin.trade/en/register"
           className="w-full md:w-auto"
         >
           <div className="rounded-2xl bg-emerald-500/10 p-2 w-full md:w-[240px]">

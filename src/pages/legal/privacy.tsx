@@ -99,7 +99,7 @@ export default function PrivacyPolicy() {
 
         <h3>10. Contact</h3>
         <p>
-          For privacy requests, contact: <strong>support@everwintrade.com</strong>
+          For privacy requests, contact: <strong>support@everwin.trade</strong>
         </p>
       </LegalPageBody>
     </LegalPageShell>
