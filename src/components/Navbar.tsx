@@ -5,8 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const LINKS = {
-  login: "https://app.everwin.trade/pt/auth",
-  register: "https://app.everwin.trade/pt/auth/register",
+  login: "https://app.everwin.trade/en/auth",
+  register: "https://app.everwin.trade/en/auth/register",
 };
 
 const NAV_ITEMS = [
