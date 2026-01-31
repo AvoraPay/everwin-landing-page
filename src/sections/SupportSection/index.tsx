@@ -1,4 +1,8 @@
+//
+import { useTranslation } from "react-i18next";
+
 export const SupportSection = () => {
+  const { t } = useTranslation();
   return (
     <div id="support" className="relative content-center items-center box-border caret-transparent gap-x-0 flex flex-col shrink-0 h-min justify-center gap-y-0 w-full overflow-hidden py-[100px] md:py-8">
       <div className="box-border caret-transparent contents">
@@ -15,22 +19,21 @@ export const SupportSection = () => {
               <div className="relative content-center items-center backdrop-blur-[10px] bg-emerald-500/10 box-border caret-transparent gap-x-2.5 flex shrink-0 h-[38px] justify-center gap-y-2.5 w-min px-4 py-6 rounded-[9px]">
                 <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start text-nowrap">
                   <p className="text-emerald-500 text-2xl box-border caret-transparent leading-6 text-center text-nowrap font-bricolage_grotesque">
-                    24/7 support
+                    {t("support.badge")}
                   </p>
                 </div>
               </div>
               <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start break-words w-full">
                 <p className="text-emerald-500 text-[62px] box-border caret-transparent leading-[74.4px] break-words font-bricolage_grotesque">
                   <span className="text-white box-border caret-transparent break-words">
-                    We are available{" "}
+                    {t("support.title_prefix")}{" "}
                   </span>
-                  24 hours a day to help you.
+                  {t("support.title_suffix")}
                 </p>
               </div>
               <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start break-words w-[314px]">
                 <p className="text-white text-lg box-border caret-transparent leading-[26px] break-words font-bricolage_grotesque">
-                  Our specialized support team is here to help you with any
-                  questions.
+                  {t("support.desc")}
                 </p>
               </div>
             </div>

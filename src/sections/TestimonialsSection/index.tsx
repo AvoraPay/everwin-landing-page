@@ -1,17 +1,20 @@
-// everwin-page/src/sections/TestimonialsSection/index.tsx
+//
+import { useTranslation } from "react-i18next";
 import { TestimonialCard } from "./components/TestimonialCard";
 import { StatCard } from "./components/StatCard";
 
 export const TestimonialsSection = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="relative content-center items-center box-border caret-transparent gap-x-[60px] flex flex-col shrink-0 h-min justify-center gap-y-[60px] w-full py-0 scroll-mt-[78px] md:pt-[90px] md:pb-[100px]">
       <div className="box-border caret-transparent contents">
         <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start break-words text-wrap w-[90%] md:text-nowrap md:w-auto md:break-normal">
           <p className="text-gray-800 text-[32px] box-border caret-transparent leading-[30.08px] break-words text-center text-wrap font-bricolage_grotesque md:text-nowrap md:break-normal">
-            Learn a little about
+            {t("testimonials.title_1")}
           </p>
           <p className="text-gray-800 text-[62px] font-semibold box-border caret-transparent leading-[58.28px] break-words text-center text-wrap font-bricolage_grotesque md:text-nowrap md:break-normal">
-            our achievements
+            {t("testimonials.title_2")}
           </p>
         </div>
       </div>
@@ -21,7 +24,7 @@ export const TestimonialsSection = () => {
           <TestimonialCard
             imageUrl="https://plus.unsplash.com/premium_photo-1689530775582-83b8abdb5020?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1yZWxhdGVkfDh8fHxlbnwwfHx8fHw%3D"
             imageClassName="aspect-[auto_632_/_607]"
-            testimonialText="I’ve tried a few platforms, but Everwin is the first one that feels fast and easy. Clean layout, smooth execution, and no clutter."
+            testimonialText={t("testimonials.item_1.text")}
             authorName="Lucas Ferreira"
             authorAge={28}
             showIcon={true}
@@ -32,8 +35,8 @@ export const TestimonialsSection = () => {
             <StatCard
               variant="variant1"
               mainValue="$166"
-              label="Million"
-              description="Distributed as profits to our users!"
+              label={t("testimonials.stat_1.label")}
+              description={t("testimonials.stat_1.desc")}
             />
           </div>
         </div>
@@ -43,7 +46,7 @@ export const TestimonialsSection = () => {
             variant="variant2"
             mainValue="700K"
             mainValueSuffix="+"
-            label="Users Investing"
+            label={t("testimonials.stat_2.label")}
           />
 
           <div className="box-border caret-transparent contents">
@@ -71,7 +74,7 @@ export const TestimonialsSection = () => {
 
             <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start break-words w-full">
               <p className="text-white text-base box-border caret-transparent leading-[26px] break-words font-bricolage_grotesque">
-                As a beginner, I wanted something straightforward. Everwin made it simple to place orders, track results, and learn as I go.
+                {t("testimonials.item_3.text")}
               </p>
             </div>
 
@@ -98,7 +101,7 @@ export const TestimonialsSection = () => {
           <TestimonialCard
             imageUrl="https://img.freepik.com/free-photo/close-up-portrait-curly-handsome-european-male_176532-8133.jpg?semt=ais_hybrid&w=740&q=80"
             imageClassName="aspect-[auto_640_/_594]"
-            testimonialText="The experience feels premium: fast interactions, clear information, and tutorials that actually help. Everwin is now my daily pick."
+            testimonialText={t("testimonials.item_2.text")}
             authorName="Gustavo Almeida"
             authorAge={31}
             showIcon={false}
@@ -121,8 +124,8 @@ export const TestimonialsSection = () => {
           variant="variant3"
           mainValue="8.397"
           mainValueSuffix="+"
-          label="New traders"
-          description="in the last 3 months"
+          label={t("testimonials.stat_3.label")}
+          description={t("testimonials.stat_3.desc")}
           iconUrl="https://c.animaapp.com/mk284v6uqUa07j/assets/icon-38.svg"
           iconAlt="Icon"
         />

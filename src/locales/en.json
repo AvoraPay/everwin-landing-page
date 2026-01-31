@@ -1,0 +1,214 @@
+{
+  "navbar": {
+    "home": "Home",
+    "assets": "Assets",
+    "tools": "Tools",
+    "tutorials": "Tutorials",
+    "support": "Support",
+    "faq": "FAQ",
+    "login": "Login",
+    "create_account": "Create account"
+  },
+  "hero": {
+    "heading_1": "One platform,",
+    "heading_2": "endless <0>opportunities.</0>",
+    "description": "Invest in global stocks, forex, and 200+ other assets — in a simple way.",
+    "start_now": "Start Now",
+    "find_out_more": "Find out more"
+  },
+  "disclaimer": {
+    "text": "Everwin is not authorized by the Brazilian Securities and Exchange Commission to publicly offer or broker securities in Brazil. By accessing the Everwin website, the user declares to be aware of and agree to the restrictions indicated here. For more information, please consult the Customer Agreement.",
+    "close": "Close",
+    "agree": "Agree"
+  },
+  "asset_card": {
+    "profit": "Profit",
+    "price": "Price"
+  },
+  "assets": {
+    "headline_1": "Assets to invest in,",
+    "headline_2": "in a completely uncomplicated way.",
+    "subtitle": "Choose one of the assets and start investing with just a few clicks."
+  },
+  "tools": {
+    "header_title": "Tools traders love",
+    "header_desc": "Everwin brings advanced insights and automation to help you decide faster.",
+    "alert_title": "Smart alerts, right on time",
+    "alert_desc": "Set your target and get notified when the market hits your level.",
+    "alert_badge": "Updates",
+    "auto_title_1": "Automate your",
+    "auto_title_2": "exits",
+    "auto_desc": "Close at the right time with rules that reduce risk and improve consistency.",
+    "auto_result": "Result",
+    "feed_title_1": "A smarter",
+    "feed_title_2": "market feed",
+    "feed_desc": "Stay informed with what matters — no noise, just signals.",
+    "feed_list_title": "Popular",
+    "feed_footer": "Market Commentary • Weekly",
+    "cal_title_1": "Integrated",
+    "cal_title_2": "Economic Calendar",
+    "cal_desc": "Know what’s coming and plan with confidence — all inside Everwin.",
+    "cal_widget_title": "Economic calendar",
+    "cal_event_1": "Annual visitors",
+    "cal_event_2": "Foreign securities",
+    "cal_event_3": "Stocks by foreigners",
+    "cal_event_4": "House price index",
+    "cta_text": "Start with Everwin in minutes — tools built for clarity, speed and control.",
+    "cta_button": "Create account"
+  },
+  "tutorials": {
+    "title": "Simple.",
+    "subtitle": "From the first click.",
+    "description": "Everwin keeps everything in one place — tools, guides and shortcuts — so you can start fast and stay in control.",
+    "cta": "Create account",
+    "image_label": "Tutorials",
+    "card_negotiate": "How to negotiate?",
+    "card_negotiate_time": "Up to 15 min",
+    "card_interface": "Interface Guide",
+    "card_interface_desc": "Quick Introduction",
+    "video_label": "Video tutorials",
+    "card_all": "All Videos",
+    "card_all_count": "41 Videos",
+    "card_basic": "Basic Concepts",
+    "card_basic_count": "14 Videos",
+    "card_technical": "Technical Analysis",
+    "card_technical_count": "4 Videos",
+    "card_fundamental": "Fundamental Analysis",
+    "card_fundamental_count": "5 Videos"
+  },
+  "support": {
+    "badge": "24/7 support",
+    "title_prefix": "We are available",
+    "title_suffix": "24 hours a day to help you.",
+    "desc": "Our specialized support team is here to help you with any questions."
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "desc_1": "Quick answers to the most common questions about using",
+    "desc_2": "— from demo practice to deposits, withdrawals, and support.",
+    "cta": "Start with Everwin",
+    "items": {
+      "0": {
+        "q": "What’s the minimum deposit and withdrawal on Everwin?",
+        "a": "Minimum amounts can vary by payment method and region. You’ll always see it clearly in the deposit/withdraw screen before confirming the request."
+      },
+      "1": {
+        "q": "Can I withdraw funds whenever I want?",
+        "a": "You can request a withdrawal at any time. Processing time depends on the method you choose and account verification steps designed to keep your account secure."
+      },
+      "2": {
+        "q": "Is there a demo account to practice first?",
+        "a": "Yes. Everwin provides a demo environment so you can test the platform and build confidence before using real funds."
+      },
+      "3": {
+        "q": "Can I use Everwin on mobile?",
+        "a": "Yes. You can access your account from mobile and desktop. The experience is designed to stay smooth even on smaller screens."
+      },
+      "4": {
+        "q": "How do I contact Everwin support?",
+        "a": "If you need help, you can contact the support team by email or through the help options available inside the platform. If something is urgent, include your account email and a short description of the issue."
+      }
+    }
+  },
+  "testimonials": {
+    "title_1": "Learn a little about",
+    "title_2": "our achievements",
+    "item_1": {
+      "text": "I’ve tried a few platforms, but Everwin is the first one that feels fast and easy. Clean layout, smooth execution, and no clutter."
+    },
+    "item_2": {
+      "text": "The experience feels premium: fast interactions, clear information, and tutorials that actually help. Everwin is now my daily pick."
+    },
+    "item_3": {
+      "text": "As a beginner, I wanted something straightforward. Everwin made it simple to place orders, track results, and learn as I go."
+    },
+    "stat_1": {
+      "label": "Million",
+      "desc": "Distributed as profits to our users!"
+    },
+    "stat_2": {
+      "label": "Users Investing"
+    },
+    "stat_3": {
+      "label": "New traders",
+      "desc": "in the last 3 months"
+    }
+  },
+  "trading": {
+    "title_1": "Simplify your",
+    "title_2": "trading strategy.",
+    "description": "Open a buy or sell position, and if, after the chosen time, the asset has moved in your favor, you will receive your profits immediately!",
+    "cta": "Start Now",
+    "stat_label": "Users Investing"
+  },
+  "deposit": {
+    "title_1": "Fast deposit,",
+    "title_2": "Even faster withdrawal!",
+    "description": "Your deposit on the platform is immediate, and after making a profit, you can withdraw everything instantly!"
+  },
+  "steps": {
+    "header_1": "Get started in just",
+    "header_2": "3 Simple Steps",
+    "description": "We’ve streamlined the journey so you can set up, practice, and go live with confidence.",
+    "item_1": {
+      "step": "First Step",
+      "title": "Create your Everwin account.",
+      "desc": "Sign up in minutes and unlock your dashboard to start exploring the platform right away."
+    },
+    "item_2": {
+      "step": "Second Step",
+      "title": "Practice inside Everwin — risk-free.",
+      "desc": "Get a demo balance to test strategies with Everwin tools until you feel consistent and confident."
+    },
+    "item_3": {
+      "step": "Third Step",
+      "title": "Deposit and go live.",
+      "desc": "Make your first deposit and access a broader set of assets — with simple controls and clear execution."
+    }
+  },
+  "footer": {
+    "slogan_1": "One brokerage firm,",
+    "slogan_2": "countless investment opportunities.",
+    "policies_title": "Policies",
+    "legal_title": "Legal",
+    "links": {
+      "privacy": "Privacy",
+      "payment": "Payment",
+      "general_fees": "General Fees",
+      "terms": "Terms and conditions",
+      "aml": "Legal AML",
+      "withdrawal": "Withdrawal Policy",
+      "risk": "Risk Disclosure",
+      "order_execution": "Order Fulfillment",
+      "margin": "Margin Trading",
+      "cookies": "Cookies",
+      "demo": "Demo and tournament"
+    },
+    "disclaimer": {
+      "title": "DISCLAIMER",
+      "text_1": "Financial operations on this site may involve risks. Using the tools and services provided here may lead to financial losses, including the total loss of funds in your Everwin account. Assess the risks and speak with an independent financial advisor before making any trades. Everwin is not responsible for any direct, indirect, consequential losses or any other damages arising from the user's actions on the platform.",
+      "text_2": "Everwin and any of its services are not intended for or offered to residents of Brazil. Everwin does not advertise its services in Brazil or to users residing in Brazil, and no content on this website should be interpreted in this way. Everwin is not authorized by the Brazilian Securities and Exchange Commission to publicly offer or broker offerings of securities in Brazil.",
+      "text_3": "Everwin does not open accounts for residents or citizens of countries or jurisdictions subject to international high-risk lists or AML/CFT-related sanctions, including but not limited to: United States, the European Union, the United Kingdom, Canada, Israel, North Korea, Iran, Myanmar, Syria, Sudan, Cuba, and any other country identified by the FATF as High-Risk or Under Increased Monitoring. Users located in these regions are not eligible to use Everwin's services, and it is the user's sole responsibility to ensure that accessing the platform is permitted under the laws of their jurisdiction."
+    },
+    "copyright": "© 2026 Everwin, All rights reserved.",
+    "follow": "Follow Everwin:"
+  },
+  "legal_section": {
+    "top_title": "Legal",
+    "top_desc": "Policies and disclosures related to Everwin.",
+    "policies_title": "Policies",
+    "sidebar": {
+      "privacy": "Privacy Policy",
+      "terms": "Terms & Conditions",
+      "cookies": "Cookies Policy",
+      "payment": "Payment Policy",
+      "withdrawal": "Withdrawal Policy",
+      "general_fees": "General Fees",
+      "risk": "Risk Disclosure",
+      "order_execution": "Order Execution Policy",
+      "margin": "Margin Trading",
+      "aml": "AML & KYC Policy",
+      "demo": "Demo Accounts"
+    }
+  }
+}

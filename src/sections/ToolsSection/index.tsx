@@ -1,4 +1,6 @@
+//
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ToolCard } from "./components/ToolCard";
 
 type Quote = {
@@ -20,6 +22,7 @@ function fmtPrice(n?: number) {
 }
 
 export const ToolsSection = () => {
+  const { t } = useTranslation();
   const base =
     (import.meta as any)?.env?.VITE_QUOTES_BASE_URL ?? "https://everwin-quotes-worker.brasilcodecenter.workers.dev";
 
@@ -59,24 +62,24 @@ export const ToolsSection = () => {
   }, [base, symbols]);
 
   return (
-   <section id="tools" className="relative w-full py-0 md:py-8">
+    <section id="tools" className="relative w-full py-0 md:py-8">
       <div className="mx-auto w-[90%] max-w-[1060px]">
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           {/* HEADER (span 2 no desktop) */}
           <div className="md:col-span-2">
             <ToolCard
               type="header"
-              title="Tools traders love"
-              description="Everwin brings advanced insights and automation to help you decide faster."
+              title={t("tools.header_title")}
+              description={t("tools.header_desc")}
             />
           </div>
 
           {/* ALERT (BTC -> META) */}
           <ToolCard
             type="alert"
-            title="Smart alerts, right on time"
-            description="Set your target and get notified when the market hits your level."
-            badgeLabel="Updates"
+            title={t("tools.alert_title")}
+            description={t("tools.alert_desc")}
+            badgeLabel={t("tools.alert_badge")}
             metricLabel="META"
             metricValue={metaPrice}
             // ✅ ícone do Meta (você pode trocar por um local depois)
@@ -88,11 +91,11 @@ export const ToolsSection = () => {
             type="automation"
             title={
               <>
-                Automate your <span className="text-emerald-500">exits</span>
+                {t("tools.auto_title_1")} <span className="text-emerald-500">{t("tools.auto_title_2")}</span>
               </>
             }
-            description="Close at the right time with rules that reduce risk and improve consistency."
-            resultLabel="Result"
+            description={t("tools.auto_desc")}
+            resultLabel={t("tools.auto_result")}
             resultValue="+870.03"
           />
 
@@ -101,17 +104,17 @@ export const ToolsSection = () => {
             type="feed"
             title={
               <>
-                A smarter <span className="text-emerald-500">market feed</span>
+                {t("tools.feed_title_1")} <span className="text-emerald-500">{t("tools.feed_title_2")}</span>
               </>
             }
-            description="Stay informed with what matters — no noise, just signals."
-            listTitle="Popular"
+            description={t("tools.feed_desc")}
+            listTitle={t("tools.feed_list_title")}
             list={[
               { name: "AUD/CAD", sub: "0.89226" },
               { name: "Walgreens Boots", sub: "0.89226" },
               { name: "United Kingdom", sub: "0.89226" },
             ]}
-            footerNote="Market Commentary • Weekly"
+            footerNote={t("tools.feed_footer")}
           />
 
           {/* CALENDAR */}
@@ -119,17 +122,17 @@ export const ToolsSection = () => {
             type="calendar"
             title={
               <>
-                Integrated{" "}
-                <span className="text-emerald-500">Economic Calendar</span>
+                {t("tools.cal_title_1")}{" "}
+                <span className="text-emerald-500">{t("tools.cal_title_2")}</span>
               </>
             }
-            description="Know what’s coming and plan with confidence — all inside Everwin."
-            calendarTitle="Economic calendar"
+            description={t("tools.cal_desc")}
+            calendarTitle={t("tools.cal_widget_title")}
             events={[
-              { title: "Annual visitors", time: "18:46", active: true },
-              { title: "Foreign securities", time: "18:42" },
-              { title: "Stocks by foreigners", time: "18:30" },
-              { title: "House price index", time: "18:28" },
+              { title: t("tools.cal_event_1"), time: "18:46", active: true },
+              { title: t("tools.cal_event_2"), time: "18:42" },
+              { title: t("tools.cal_event_3"), time: "18:30" },
+              { title: t("tools.cal_event_4"), time: "18:28" },
             ]}
           />
 
@@ -137,8 +140,7 @@ export const ToolsSection = () => {
           <div className="md:col-span-2">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <p className="text-gray-500 font-bricolage_grotesque text-base leading-[26px]">
-                Start with Everwin in minutes — tools built for clarity, speed and
-                control.
+                {t("tools.cta_text")}
               </p>
 
               <a
@@ -147,7 +149,7 @@ export const ToolsSection = () => {
               >
                 <div className="flex h-full w-full items-center justify-center rounded-lg bg-emerald-500 p-4">
                   <p className="font-bricolage_grotesque text-gray-800 text-base font-medium">
-                    Create account
+                    {t("tools.cta_button")}
                   </p>
                 </div>
               </a>

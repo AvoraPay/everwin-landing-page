@@ -1,16 +1,19 @@
-// everwin-page/src/sections/TradingSection/components/TradingContent.tsx
+//
+import { useTranslation } from "react-i18next";
+
 export const TradingContent = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="w-full md:max-w-[520px]">
       <h2 className="text-gray-800 font-bricolage_grotesque font-semibold tracking-tight text-[44px] leading-[1.05] md:text-[64px]">
-        Simplify your
+        {t("trading.title_1")}
         <br />
-        trading strategy.
+        {t("trading.title_2")}
       </h2>
 
       <p className="mt-6 text-gray-500 font-bricolage_grotesque text-base leading-[26px]">
-        Open a buy or sell position, and if, after the chosen time, the asset
-        has moved in your favor, you will receive your profits immediately!
+        {t("trading.description")}
       </p>
 
       <div className="mt-10 flex flex-col gap-6 md:flex-row md:items-center">
@@ -21,7 +24,7 @@ export const TradingContent = () => {
           <div className="rounded-2xl bg-emerald-500/10 p-2 w-full md:w-[240px]">
             <div className="h-[64px] rounded-xl bg-emerald-500 flex items-center justify-center shadow-[0_18px_40px_rgba(16,185,129,0.18)]">
               <span className="text-gray-900 font-bricolage_grotesque font-medium">
-                Start Now
+                {t("trading.cta")}
               </span>
             </div>
           </div>
@@ -39,7 +42,7 @@ export const TradingContent = () => {
               700K<span className="text-emerald-500">+</span>
             </div>
             <div className="mt-1 text-gray-800 font-bricolage_grotesque text-sm leading-[14px]">
-              Users Investing
+              {t("trading.stat_label")}
             </div>
           </div>
         </div>

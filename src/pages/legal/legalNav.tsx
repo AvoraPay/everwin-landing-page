@@ -6,17 +6,17 @@ export type LegalItem = {
 };
 
 export const LEGAL_ITEMS: LegalItem[] = [
-  { slug: "privacy", title: "Privacy Policy" },
-  { slug: "terms", title: "Terms & Conditions" },
-  { slug: "cookies", title: "Cookies Policy" },
-  { slug: "payment-policy", title: "Payment Policy" },
-  { slug: "withdrawal-policy", title: "Withdrawal Policy" },
-  { slug: "general-fees", title: "General Fees" },
-  { slug: "risk-disclosure", title: "Risk Disclosure" },
-  { slug: "order-execution", title: "Order Execution Policy" },
-  { slug: "margin-trading", title: "Margin Trading" },
-  { slug: "aml", title: "AML & KYC Policy" },
-  { slug: "demo-accounts", title: "Demo Accounts" },
+  { slug: "privacy", title: "legal_section.sidebar.privacy" },
+  { slug: "terms", title: "legal_section.sidebar.terms" },
+  { slug: "cookies", title: "legal_section.sidebar.cookies" },
+  { slug: "payment-policy", title: "legal_section.sidebar.payment" },
+  { slug: "withdrawal-policy", title: "legal_section.sidebar.withdrawal" },
+  { slug: "general-fees", title: "legal_section.sidebar.general_fees" },
+  { slug: "risk-disclosure", title: "legal_section.sidebar.risk" },
+  { slug: "order-execution", title: "legal_section.sidebar.order_execution" },
+  { slug: "margin-trading", title: "legal_section.sidebar.margin" },
+  { slug: "aml", title: "legal_section.sidebar.aml" },
+  { slug: "demo-accounts", title: "legal_section.sidebar.demo" },
 ];
 
 export const legalPath = (slug: string) => `/legal/${slug}`;

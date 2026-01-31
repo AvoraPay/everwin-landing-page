@@ -3,19 +3,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-
-const LINKS = {
-  login: "https://app.everwin.trade/en/auth",
-  register: "https://app.everwin.trade/en/auth/register",
-};
+import { useTranslation } from "react-i18next";
 
 const NAV_ITEMS = [
-  { label: "Home", id: "top" },
-  { label: "Assets", id: "assets" },
-  { label: "Tools", id: "tools" },
-  { label: "Tutorials", id: "tutorials" },
-  { label: "Support", id: "support" },
-  { label: "FAQ", id: "faq" },
+  { labelKey: "navbar.home", id: "top" },
+  { labelKey: "navbar.assets", id: "assets" },
+  { labelKey: "navbar.tools", id: "tools" },
+  { labelKey: "navbar.tutorials", id: "tutorials" },
+  { labelKey: "navbar.support", id: "support" },
+  { labelKey: "navbar.faq", id: "faq" },
 ];
 
 function useIsDesktop(minWidth = 768) {
@@ -41,24 +37,7 @@ function useIsDesktop(minWidth = 768) {
   return isDesktop;
 }
 
-type Locale = "en" | "pt";
 
-function getInitialLocale(): Locale {
-  if (typeof window === "undefined") return "en";
-  const saved = window.localStorage.getItem("everwin_locale");
-  if (saved === "pt" || saved === "en") return saved;
-  return "en";
-}
-
-function setLocaleGlobal(locale: Locale) {
-  try {
-    window.localStorage.setItem("everwin_locale", locale);
-  } catch {}
-  document.documentElement.lang = locale === "pt" ? "pt" : "en";
-  window.dispatchEvent(
-    new CustomEvent("everwin:locale-change", { detail: { locale } })
-  );
-}
 
 const FlagUK = ({ className = "" }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 16" aria-hidden="true">
@@ -79,19 +58,31 @@ const FlagPT = ({ className = "" }: { className?: string }) => (
   </svg>
 );
 
+const FlagES = ({ className = "" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 16" aria-hidden="true">
+    <rect width="24" height="16" fill="#AA151B" />
+    <rect width="24" height="8" y="4" fill="#F1BF00" />
+  </svg>
+);
+
 export const Navbar = () => {
   const isDesktop = useIsDesktop(768);
+  const { t, i18n } = useTranslation();
 
   const navigate = useNavigate();
   const location = useLocation();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
-  const [locale, setLocale] = useState<Locale>(getInitialLocale);
 
-  useEffect(() => {
-    setLocaleGlobal(locale);
-  }, [locale]);
+  const links = useMemo(() => {
+    // Default to 'en' only if not 'pt' or 'es'
+    const slug = ["pt", "es"].includes(i18n.language) ? i18n.language : "en";
+    return {
+      login: `https://app.everwin.trade/${slug}/auth`,
+      register: `https://app.everwin.trade/${slug}/auth/register`,
+    };
+  }, [i18n.language]);
 
   useEffect(() => {
     if (isDesktop) {
@@ -155,7 +146,16 @@ export const Navbar = () => {
   };
 
   const LanguageButton = useMemo(() => {
-    const Flag = locale === "pt" ? FlagPT : FlagUK;
+    const currentLang = i18n.language; // or i18n.resolvedLanguage
+    // Simple mapping for the main icon
+    let Flag = FlagUK;
+    if (currentLang === "pt") Flag = FlagPT;
+    if (currentLang === "es") Flag = FlagES;
+
+    const changeLanguage = (lng: string) => {
+      i18n.changeLanguage(lng);
+      setLangOpen(false);
+    };
 
     return (
       <div className="relative">
@@ -178,10 +178,7 @@ export const Navbar = () => {
           <div className="absolute right-0 mt-2 w-[170px] rounded-lg border border-white/10 bg-[linear-gradient(178deg,rgb(24,27,36)_-88%,rgb(17,19,26)_61%)] shadow-xl overflow-hidden">
             <button
               type="button"
-              onClick={() => {
-                setLocale("en");
-                setLangOpen(false);
-              }}
+              onClick={() => changeLanguage("en")}
               className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/10 transition text-left"
             >
               <span className="h-4 w-6 overflow-hidden rounded-sm block">
@@ -190,14 +187,9 @@ export const Navbar = () => {
               <span className="text-white text-sm font-bricolage_grotesque">English</span>
             </button>
 
-            {/* Se quiser reativar PT depois, descomenta */}
-            {/*
             <button
               type="button"
-              onClick={() => {
-                setLocale("pt");
-                setLangOpen(false);
-              }}
+              onClick={() => changeLanguage("pt")}
               className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/10 transition text-left"
             >
               <span className="h-4 w-6 overflow-hidden rounded-sm block">
@@ -205,12 +197,22 @@ export const Navbar = () => {
               </span>
               <span className="text-white text-sm font-bricolage_grotesque">Português</span>
             </button>
-            */}
+
+            <button
+              type="button"
+              onClick={() => changeLanguage("es")}
+              className="w-full flex items-center gap-3 px-3 py-2 hover:bg-white/10 transition text-left"
+            >
+              <span className="h-4 w-6 overflow-hidden rounded-sm block">
+                <FlagES className="h-4 w-6" />
+              </span>
+              <span className="text-white text-sm font-bricolage_grotesque">Español</span>
+            </button>
           </div>
         )}
       </div>
     );
-  }, [langOpen, locale]);
+  }, [langOpen, i18n.language, i18n]);
 
   return (
     <header className="fixed inset-x-0 top-0 z-50">
@@ -267,7 +269,7 @@ export const Navbar = () => {
                     onClick={() => onNavItem(it.id)}
                     className="text-white/90 hover:text-white transition font-bricolage_grotesque text-sm"
                   >
-                    {it.label}
+                    {t(it.labelKey)}
                   </button>
                 ))}
               </nav>
@@ -276,18 +278,18 @@ export const Navbar = () => {
             {/* RIGHT: actions + language */}
             <div className="flex items-center gap-2">
               <a
-                href={LINKS.login}
-                className="inline-flex items-center justify-center h-10 px-4 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-white hover:bg-white hover:text-emerald-700 hover:border-white transition font-bricolage_grotesque text-sm"
+                href={links.login}
+                className="inline-flex items-center justify-center h-10 px-4 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-white hover:bg-white hover:text-emerald-700                hover:border-white transition font-bricolage_grotesque text-sm"
               >
-                Login
+                {t("navbar.login")}
               </a>
 
               <a
-                href={LINKS.register}
+                href={links.register}
                 className="inline-flex items-center justify-center p-1 rounded-xl bg-emerald-500/20 hover:bg-white transition"
               >
                 <span className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-emerald-500 text-white hover:bg-white hover:text-emerald-700 transition font-bricolage_grotesque text-sm font-medium">
-                  Create account
+                  {t("navbar.create_account")}
                 </span>
               </a>
 
@@ -350,7 +352,7 @@ export const Navbar = () => {
                   className="w-full flex items-center justify-between px-4 py-4 rounded-lg hover:bg-white/10 transition"
                 >
                   <span className="text-white font-bricolage_grotesque text-[18px]">
-                    {it.label}
+                    {t(it.labelKey)}
                   </span>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="text-white/60">
                     <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -363,19 +365,19 @@ export const Navbar = () => {
             <div className="mt-auto p-4 border-t border-white/10">
               <div className="flex flex-col gap-2">
                 <a
-                  href={LINKS.login}
+                  href={links.login}
                   onClick={closeOverlays}
                   className="w-full inline-flex items-center justify-center h-11 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-white hover:bg-white hover:text-emerald-700 hover:border-white transition font-bricolage_grotesque"
                 >
-                  Login
+                  {t("navbar.login")}
                 </a>
 
                 <a
-                  href={LINKS.register}
+                  href={links.register}
                   onClick={closeOverlays}
                   className="w-full inline-flex items-center justify-center h-11 rounded-lg bg-emerald-500 text-white hover:bg-white hover:text-emerald-700 transition font-bricolage_grotesque font-medium"
                 >
-                  Create account
+                  {t("navbar.create_account")}
                 </a>
               </div>
             </div>
@@ -385,3 +387,4 @@ export const Navbar = () => {
     </header>
   );
 };
+

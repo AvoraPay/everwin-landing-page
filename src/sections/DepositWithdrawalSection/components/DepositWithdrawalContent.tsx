@@ -1,7 +1,10 @@
-// src/sections/DepositWithdrawalSection/components/DepositWithdrawalContent.tsx
+//
+import { useTranslation } from "react-i18next";
 import { Reveal } from "../../../components/Reveal";
 
 export const DepositWithdrawalContent = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="relative z-10 flex w-full flex-col items-center text-center">
       <Reveal>
@@ -17,18 +20,17 @@ export const DepositWithdrawalContent = () => {
       <Reveal delay={80}>
         <div className="mt-6 w-full">
           <p className="font-bricolage_grotesque text-[38px] leading-[1.05] text-gray-800 md:text-[62px]">
-            Fast deposit,
+            {t("deposit.title_1")}
           </p>
           <p className="font-bricolage_grotesque text-[38px] leading-[1.05] text-gray-800 md:text-[62px]">
-            Even faster withdrawal!
+            {t("deposit.title_2")}
           </p>
         </div>
       </Reveal>
 
       <Reveal delay={140}>
         <p className="mt-5 max-w-[526px] font-bricolage_grotesque text-base leading-6 text-gray-500">
-          Your deposit on the platform is immediate, and after making a profit,
-          you can withdraw everything instantly!
+          {t("deposit.description")}
         </p>
       </Reveal>
     </div>

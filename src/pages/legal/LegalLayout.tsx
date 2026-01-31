@@ -1,6 +1,7 @@
 // src/pages/legal/LegalLayout.tsx
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { LEGAL_ITEMS, legalPath } from "./legalNav";
 
 function cx(...x: Array<string | false | undefined>) {
@@ -10,6 +11,7 @@ function cx(...x: Array<string | false | undefined>) {
 export const LegalLayout = () => {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const { t } = useTranslation();
 
   useEffect(() => setOpen(false), [location.pathname]);
 
@@ -25,10 +27,10 @@ export const LegalLayout = () => {
             <div className="flex items-center justify-between gap-4 border-b border-gray-200 px-6 py-5 md:px-8">
               <div>
                 <p className="text-xs uppercase tracking-widest text-gray-400 font-bricolage_grotesque">
-                  Legal
+                  {t("legal_section.top_title")}
                 </p>
                 <p className="mt-1 text-sm text-gray-500 font-bricolage_grotesque">
-                  Policies and disclosures related to Everwin.
+                  {t("legal_section.top_desc")}
                 </p>
               </div>
 
@@ -37,7 +39,7 @@ export const LegalLayout = () => {
                 onClick={() => setOpen(true)}
                 className="md:hidden inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-gray-800 shadow-sm hover:bg-gray-50 transition font-bricolage_grotesque"
               >
-                <span>Policies</span>
+                <span>{t("legal_section.policies_title")}</span>
                 <span className="text-gray-400">☰</span>
               </button>
             </div>
@@ -48,7 +50,7 @@ export const LegalLayout = () => {
               <aside className="hidden md:block border-r border-gray-200 bg-[linear-gradient(to_bottom,#ffffff,#fbfbfb)]">
                 <div className="p-5">
                   <div className="px-2 pb-2 pt-1 text-xs font-semibold uppercase tracking-wider text-gray-400 font-bricolage_grotesque">
-                    Policies
+                    {t("legal_section.policies_title")}
                   </div>
 
                   <nav className="mt-2 flex flex-col gap-1">
@@ -67,7 +69,7 @@ export const LegalLayout = () => {
                         }
                         end
                       >
-                        <span className="font-medium">{it.title}</span>
+                        <span className="font-medium">{t(it.title)}</span>
                         <span className="opacity-0 group-hover:opacity-100 transition text-gray-400">
                           →
                         </span>
@@ -99,7 +101,7 @@ export const LegalLayout = () => {
           <div className="fixed inset-y-0 right-0 z-50 w-[86%] max-w-[380px] bg-white border-l border-gray-200 shadow-2xl">
             <div className="h-16 px-4 flex items-center justify-between border-b border-gray-200">
               <p className="font-bricolage_grotesque font-semibold text-gray-900">
-                Policies
+                {t("legal_section.policies_title")}
               </p>
               <button
                 type="button"
@@ -128,7 +130,7 @@ export const LegalLayout = () => {
                     }
                     end
                   >
-                    <span className="font-medium">{it.title}</span>
+                    <span className="font-medium">{t(it.title)}</span>
                     <span className="text-gray-400">→</span>
                   </NavLink>
                 ))}

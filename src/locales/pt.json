@@ -1,0 +1,214 @@
+{
+    "navbar": {
+        "home": "Início",
+        "assets": "Ativos",
+        "tools": "Ferramentas",
+        "tutorials": "Tutoriais",
+        "support": "Suporte",
+        "faq": "FAQ",
+        "login": "Entrar",
+        "create_account": "Criar conta"
+    },
+    "hero": {
+        "heading_1": "Uma plataforma,",
+        "heading_2": "oportunidades <0>infinitas.</0>",
+        "description": "Invista em ações globais, forex e mais de 200 outros ativos — de forma simples.",
+        "start_now": "Comece Agora",
+        "find_out_more": "Saiba mais"
+    },
+    "disclaimer": {
+        "text": "A Everwin não é autorizada pela Comissão de Valores Mobiliários (CVM) para oferecer publicamente ou intermediar valores mobiliários no Brasil. Ao acessar o site da Everwin, o usuário declara estar ciente e concordar com as restrições aqui indicadas. Para mais informações, consulte o Contrato do Cliente.",
+        "close": "Fechar",
+        "agree": "Concordar"
+    },
+    "asset_card": {
+        "profit": "Lucro",
+        "price": "Preço"
+    },
+    "assets": {
+        "headline_1": "Ativos para investir,",
+        "headline_2": "de forma completamente descomplicada.",
+        "subtitle": "Escolha um dos ativos e comece a investir com apenas alguns cliques."
+    },
+    "tools": {
+        "header_title": "Ferramentas que traders amam",
+        "header_desc": "A Everwin traz insights avançados e automação para ajudar você a decidir mais rápido.",
+        "alert_title": "Alertas inteligentes, no tempo certo",
+        "alert_desc": "Defina seu alvo e seja notificado quando o mercado atingir seu nível.",
+        "alert_badge": "Atualizações",
+        "auto_title_1": "Automatize suas",
+        "auto_title_2": "saídas",
+        "auto_desc": "Feche na hora certa com regras que reduzem risco e melhoram a consistência.",
+        "auto_result": "Resultado",
+        "feed_title_1": "Um feed de mercado",
+        "feed_title_2": "mais inteligente",
+        "feed_desc": "Fique informado com o que importa — sem ruído, apenas sinais.",
+        "feed_list_title": "Popular",
+        "feed_footer": "Comentário de Mercado • Semanal",
+        "cal_title_1": "Calendário Econômico",
+        "cal_title_2": "Integrado",
+        "cal_desc": "Saiba o que vem por aí e planeje com confiança — tudo dentro da Everwin.",
+        "cal_widget_title": "Calendário econômico",
+        "cal_event_1": "Visitantes anuais",
+        "cal_event_2": "Títulos estrangeiros",
+        "cal_event_3": "Ações por estrangeiros",
+        "cal_event_4": "Índice de preços de moradias",
+        "cta_text": "Comece com a Everwin em minutos — ferramentas construídas para clareza, velocidade e controle.",
+        "cta_button": "Criar conta"
+    },
+    "tutorials": {
+        "title": "Simples.",
+        "subtitle": "Desde o primeiro clique.",
+        "description": "A Everwin mantém tudo em um só lugar — ferramentas, guias e atalhos — para que você comece rápido e mantenha o controle.",
+        "cta": "Criar conta",
+        "image_label": "Tutoriais",
+        "card_negotiate": "Como negociar?",
+        "card_negotiate_time": "Até 15 min",
+        "card_interface": "Guia da Interface",
+        "card_interface_desc": "Introdução rápida",
+        "video_label": "Tutoriais em vídeo",
+        "card_all": "Todos os vídeos",
+        "card_all_count": "41 Vídeos",
+        "card_basic": "Conceitos Básicos",
+        "card_basic_count": "14 Vídeos",
+        "card_technical": "Análise Técnica",
+        "card_technical_count": "4 Vídeos",
+        "card_fundamental": "Análise Fundamentalista",
+        "card_fundamental_count": "5 Vídeos"
+    },
+    "support": {
+        "badge": "Suporte 24/7",
+        "title_prefix": "Estamos disponíveis",
+        "title_suffix": "24 horas por dia para ajudar você.",
+        "desc": "Nossa equipe de suporte especializada está aqui para ajudar com qualquer dúvida."
+    },
+    "faq": {
+        "title": "Perguntas Frequentes",
+        "desc_1": "Respostas rápidas para as perguntas mais comuns sobre o uso da",
+        "desc_2": "— desde prática em demo até depósitos, saques e suporte.",
+        "cta": "Comece com a Everwin",
+        "items": {
+            "0": {
+                "q": "Qual é o depósito e saque mínimo na Everwin?",
+                "a": "Os valores mínimos podem variar por método de pagamento e região. Você sempre verá isso claramente na tela de depósito/saque antes de confirmar a solicitação."
+            },
+            "1": {
+                "q": "Posso sacar fundos quando eu quiser?",
+                "a": "Você pode solicitar um saque a qualquer momento. O tempo de processamento depende do método escolhido e dos passos de verificação da conta, projetados para manter sua conta segura."
+            },
+            "2": {
+                "q": "Existe uma conta demo para praticar primeiro?",
+                "a": "Sim. A Everwin oferece um ambiente de demonstração para que você possa testar a plataforma e ganhar confiança antes de usar fundos reais."
+            },
+            "3": {
+                "q": "Posso usar a Everwin no celular?",
+                "a": "Sim. Você pode acessar sua conta pelo celular e computador. A experiência é projetada para permanecer fluida mesmo em telas menores."
+            },
+            "4": {
+                "q": "Como entro em contato com o suporte da Everwin?",
+                "a": "Se precisar de ajuda, você pode contatar a equipe de suporte por e-mail ou pelas opções de ajuda disponíveis dentro da plataforma. Se for urgente, inclua o e-mail da sua conta e uma breve descrição do problema."
+            }
+        }
+    },
+    "testimonials": {
+        "title_1": "Saiba um pouco sobre",
+        "title_2": "nossas conquistas",
+        "item_1": {
+            "text": "Testei algumas plataformas, mas a Everwin é a primeira que parece rápida e fácil. Layout limpo, execução suave e sem bagunça."
+        },
+        "item_2": {
+            "text": "A experiência parece premium: interações rápidas, informações claras e tutoriais que realmente ajudam. Everwin é agora minha escolha diária."
+        },
+        "item_3": {
+            "text": "Como iniciante, eu queria algo direto. A Everwin tornou simples colocar ordens, acompanhar resultados e aprender enquanto opero."
+        },
+        "stat_1": {
+            "label": "Milhões",
+            "desc": "Distribuídos como lucros aos nossos usuários!"
+        },
+        "stat_2": {
+            "label": "Usuários Investindo"
+        },
+        "stat_3": {
+            "label": "Novos traders",
+            "desc": "nos últimos 3 meses"
+        }
+    },
+    "trading": {
+        "title_1": "Simplifique sua",
+        "title_2": "estratégia de negociação.",
+        "description": "Abra uma posição de compra ou venda e se, após o tempo escolhido, o ativo se mover a seu favor, você receberá seus lucros imediatamente!",
+        "cta": "Comece Agora",
+        "stat_label": "Usuários Investindo"
+    },
+    "deposit": {
+        "title_1": "Depósito rápido,",
+        "title_2": "Saque mais rápido ainda!",
+        "description": "Seu depósito na plataforma é imediato e, após lucrar, você pode sacar tudo instantaneamente!"
+    },
+    "steps": {
+        "header_1": "Comece em apenas",
+        "header_2": "3 Passos Simples",
+        "description": "Simplificamos a jornada para que você possa configurar, praticar e operar com confiança.",
+        "item_1": {
+            "step": "Primeiro Passo",
+            "title": "Crie sua conta Everwin.",
+            "desc": "Cadastre-se em minutos e desbloqueie seu painel para começar a explorar a plataforma imediatamente."
+        },
+        "item_2": {
+            "step": "Segundo Passo",
+            "title": "Pratique dentro da Everwin — sem risco.",
+            "desc": "Receba um saldo demo para testar estratégias com as ferramentas Everwin até se sentir consistente e confiante."
+        },
+        "item_3": {
+            "step": "Terceiro Passo",
+            "title": "Deposite e opere.",
+            "desc": "Faça seu primeiro depósito e acesse um conjunto mais amplo de ativos — com controles simples e execução clara."
+        }
+    },
+    "footer": {
+        "slogan_1": "Uma corretora,",
+        "slogan_2": "inúmeras oportunidades de investimento.",
+        "policies_title": "Políticas",
+        "legal_title": "Legal",
+        "links": {
+            "privacy": "Privacidade",
+            "payment": "Pagamento",
+            "general_fees": "Taxas Gerais",
+            "terms": "Termos e Condições",
+            "aml": "AML Legal",
+            "withdrawal": "Política de Saque",
+            "risk": "Divulgação de Risco",
+            "order_execution": "Execução de Ordens",
+            "margin": "Negociação de Margem",
+            "cookies": "Cookies",
+            "demo": "Demo e torneio"
+        },
+        "disclaimer": {
+            "title": "AVISO LEGAL",
+            "text_1": "As operações financeiras neste site podem envolver riscos. O uso das ferramentas e serviços fornecidos aqui pode levar a perdas financeiras, incluindo a perda total de fundos em sua conta Everwin. Avalie os riscos e fale com um consultor financeiro independente antes de fazer qualquer negociação. A Everwin não é responsável por quaisquer perdas diretas, indiretas, consequenciais ou quaisquer outros danos decorrentes das ações do usuário na plataforma.",
+            "text_2": "A Everwin e qualquer um de seus serviços não são destinados ou oferecidos a residentes do Brasil. A Everwin não anuncia seus serviços no Brasil ou para usuários residentes no Brasil, e nenhum conteúdo deste site deve ser interpretado dessa maneira. A Everwin não é autorizada pela Comissão de Valores Mobiliários do Brasil a oferecer publicamente ou intermediar ofertas de valores mobiliários no Brasil.",
+            "text_3": "A Everwin não abre contas para residentes ou cidadãos de países ou jurisdições sujeitas a listas internacionais de alto risco ou sanções relacionadas a LBC/CFT, incluindo, mas não se limitando a: Estados Unidos, União Europeia, Reino Unido, Canadá, Israel, Coreia do Norte, Irã, Mianmar, Síria, Sudão, Cuba e qualquer outro país identificado pelo GAFI como de Alto Risco ou Sob Monitoramento Aumentado. Usuários localizados nessas regiões não são elegíveis para usar os serviços da Everwin, e é de responsabilidade exclusiva do usuário garantir que o acesso à plataforma seja permitido pelas leis de sua jurisdição."
+        },
+        "copyright": "© 2026 Everwin, Todos os direitos reservados.",
+        "follow": "Siga a Everwin:"
+    },
+    "legal_section": {
+        "top_title": "Legal",
+        "top_desc": "Políticas e divulgações relacionadas à Everwin.",
+        "policies_title": "Políticas",
+        "sidebar": {
+            "privacy": "Política de Privacidade",
+            "terms": "Termos e Condições",
+            "cookies": "Política de Cookies",
+            "payment": "Política de Pagamento",
+            "withdrawal": "Política de Saque",
+            "general_fees": "Taxas Gerais",
+            "risk": "Divulgação de Risco",
+            "order_execution": "Política de Execução de Ordens",
+            "margin": "Negociação de Margem",
+            "aml": "Política AML & KYC",
+            "demo": "Contas Demo"
+        }
+    }
+}

@@ -1,5 +1,8 @@
-// everwin-page/src/sections/TutorialsSection/components/TutorialsImage.tsx
+//
+import { useTranslation } from "react-i18next";
+
 export const TutorialsImage = () => {
+  const { t } = useTranslation();
   return (
     <div className="relative aspect-[1.47948_/_1] box-border caret-transparent shrink-0 min-h-[auto] min-w-[auto] translate-y-[-50.0%] w-[150%] z-[1] right-auto top-auto md:absolute md:min-h-0 md:min-w-0 md:right-[-230px] md:w-4/5 md:top-2/4">
       <div className="absolute box-border caret-transparent inset-0">
@@ -13,7 +16,7 @@ export const TutorialsImage = () => {
         <div className="relative content-center items-center box-border caret-transparent flex shrink-0 h-min justify-between w-full">
           <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start text-nowrap">
             <p className="text-stone-200 text-[21.6px] font-medium box-border caret-transparent leading-[21.6px] text-center text-nowrap font-bricolage_grotesque">
-              Tutorials
+              {t("tutorials.image_label")}
             </p>
           </div>
           <div className="relative box-border caret-transparent shrink-0 h-[29px] w-[29px]">
@@ -40,12 +43,12 @@ export const TutorialsImage = () => {
             <div className="relative content-start items-start box-border caret-transparent gap-x-[5.40043px] flex basis-0 flex-col grow shrink-0 h-min justify-center gap-y-[5.40043px] w-px">
               <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start break-words w-[232px]">
                 <p className="text-stone-200 text-sm font-medium box-border caret-transparent leading-[14px] break-words font-bricolage_grotesque">
-                  How to negotiate?
+                  {t("tutorials.card_negotiate")}
                 </p>
               </div>
               <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start break-words w-[232px]">
                 <p className="text-stone-200 text-[13px] font-light box-border caret-transparent leading-[13px] break-words font-bricolage_grotesque">
-                  Up to 15 min
+                  {t("tutorials.card_negotiate_time")}
                 </p>
               </div>
             </div>
@@ -63,12 +66,12 @@ export const TutorialsImage = () => {
             <div className="relative content-start items-start box-border caret-transparent gap-x-[5.40043px] flex basis-0 flex-col grow shrink-0 h-min justify-center gap-y-[5.40043px] w-px">
               <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start break-words w-[232px]">
                 <p className="text-stone-200 text-sm font-medium box-border caret-transparent leading-[14px] break-words font-bricolage_grotesque">
-                  Interface Guide
+                  {t("tutorials.card_interface")}
                 </p>
               </div>
               <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start break-words w-[232px]">
                 <p className="text-stone-200 text-[13px] font-light box-border caret-transparent leading-[13px] break-words font-bricolage_grotesque">
-                  Quick Introduction
+                  {t("tutorials.card_interface_desc")}
                 </p>
               </div>
             </div>
@@ -76,7 +79,7 @@ export const TutorialsImage = () => {
         </div>
         <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start order-none text-nowrap md:order-2">
           <p className="text-stone-200 text-[16.2px] font-light box-border caret-transparent leading-[16.2px] text-center text-nowrap font-bricolage_grotesque">
-            VIdeo tutorials
+            {t("tutorials.video_label")}
           </p>
         </div>
         <div className="relative content-start items-start box-border caret-transparent gap-x-[10.8009px] flex flex-col shrink-0 h-min justify-start order-none gap-y-[10.8009px] w-full md:order-3">
@@ -93,12 +96,12 @@ export const TutorialsImage = () => {
             <div className="relative content-start items-start box-border caret-transparent gap-x-[5.40043px] flex basis-0 flex-col grow shrink-0 h-min justify-center gap-y-[5.40043px] w-px">
               <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start break-words w-[232px]">
                 <p className="text-stone-200 text-sm font-medium box-border caret-transparent leading-[14px] break-words font-bricolage_grotesque">
-                  All Videos
+                  {t("tutorials.card_all")}
                 </p>
               </div>
               <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start break-words w-[232px]">
                 <p className="text-stone-200 text-[13px] font-light box-border caret-transparent leading-[13px] break-words font-bricolage_grotesque">
-                  41 Videos
+                  {t("tutorials.card_all_count")}
                 </p>
               </div>
             </div>
@@ -116,12 +119,12 @@ export const TutorialsImage = () => {
             <div className="relative content-start items-start box-border caret-transparent gap-x-[5.40043px] flex basis-0 flex-col grow shrink-0 h-min justify-center gap-y-[5.40043px] w-px">
               <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start break-words w-[232px]">
                 <p className="text-stone-200 text-sm font-medium box-border caret-transparent leading-[14px] break-words font-bricolage_grotesque">
-                  Basic Concepts
+                  {t("tutorials.card_basic")}
                 </p>
               </div>
               <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start break-words w-[232px]">
                 <p className="text-stone-200 text-[13px] font-light box-border caret-transparent leading-[13px] break-words font-bricolage_grotesque">
-                  14 Vídeos
+                  {t("tutorials.card_basic_count")}
                 </p>
               </div>
             </div>
@@ -139,12 +142,12 @@ export const TutorialsImage = () => {
             <div className="relative content-start items-start box-border caret-transparent gap-x-[5.40043px] flex basis-0 flex-col grow shrink-0 h-min justify-center gap-y-[5.40043px] w-px">
               <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start break-words w-[232px]">
                 <p className="text-stone-200 text-sm font-medium box-border caret-transparent leading-[14px] break-words font-bricolage_grotesque">
-                  Technical Analysis
+                  {t("tutorials.card_technical")}
                 </p>
               </div>
               <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start break-words w-[232px]">
                 <p className="text-stone-200 text-[13px] font-light box-border caret-transparent leading-[13px] break-words font-bricolage_grotesque">
-                  4 Videos
+                  {t("tutorials.card_technical_count")}
                 </p>
               </div>
             </div>
@@ -162,12 +165,12 @@ export const TutorialsImage = () => {
             <div className="relative content-start items-start box-border caret-transparent gap-x-[5.40043px] flex basis-0 flex-col grow shrink-0 h-min justify-center gap-y-[5.40043px] w-px">
               <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start break-words w-[232px]">
                 <p className="text-stone-200 text-sm font-medium box-border caret-transparent leading-[14px] break-words font-bricolage_grotesque">
-                  Fundamental Analysis
+                  {t("tutorials.card_fundamental")}
                 </p>
               </div>
               <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start break-words w-[232px]">
                 <p className="text-stone-200 text-[13px] font-light box-border caret-transparent leading-[13px] break-words font-bricolage_grotesque">
-                  5 Videos
+                  {t("tutorials.card_fundamental_count")}
                 </p>
               </div>
             </div>

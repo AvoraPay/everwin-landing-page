@@ -1,5 +1,7 @@
-// everwin-page/src/sections/Hero/components/HeroButtons.tsx
+import { useTranslation } from "react-i18next";
+
 export const HeroButtons = () => {
+  const { t } = useTranslation();
   return (
     <div className="flex w-full flex-col items-center justify-center gap-3 md:flex-row md:gap-4">
       <a
@@ -8,7 +10,7 @@ export const HeroButtons = () => {
       >
         <div className="flex h-[64px] items-center justify-center rounded-lg bg-emerald-500 px-6 transition-transform duration-300 group-hover:scale-[1.01]">
           <span className="font-bricolage_grotesque text-base font-medium text-gray-900">
-            Start Now
+            {t("hero.start_now")}
           </span>
         </div>
       </a>
@@ -17,7 +19,7 @@ export const HeroButtons = () => {
         href="#learn-more"
         className="flex h-[56px] items-center justify-center gap-2 rounded-md px-4 text-gray-500 md:h-[60px]"
       >
-        <span className="font-sora text-base leading-6">Find out more</span>
+        <span className="font-sora text-base leading-6">{t("hero.find_out_more")}</span>
         <img
           src="https://c.animaapp.com/mk284v6uqUa07j/assets/icon-1.svg"
           alt="Icon"

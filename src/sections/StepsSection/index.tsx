@@ -1,10 +1,12 @@
-// everwin-page/src/sections/StepsSection/index.tsx
+//
 import { useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { StepCard } from "./components/StepCard";
 import { useScrollProgress } from "../../hooks/useScrollProgress";
 
 export const StepsSection = () => {
   const stepsWrapRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
 
   // Progress suave ao longo do bloco de steps (0..1)
   const progress = useScrollProgress(stepsWrapRef, { start: 0.9, end: 0.25 });
@@ -16,15 +18,15 @@ export const StepsSection = () => {
         <div className="relative z-[1] flex w-full flex-col items-center justify-center gap-y-6 overflow-hidden">
           <div className="w-full">
             <p className="font-bricolage_grotesque text-center text-[42px] leading-[44px] text-gray-800 md:text-[62px] md:leading-[62px]">
-              Get started in just
+              {t("steps.header_1")}
             </p>
             <p className="font-bricolage_grotesque text-center text-[42px] leading-[44px] text-emerald-500 md:text-[62px] md:leading-[62px]">
-              <strong className="font-bold">3 Simple Steps</strong>
+              <strong className="font-bold">{t("steps.header_2")}</strong>
             </p>
           </div>
 
           <p className="font-bricolage_grotesque text-center text-base font-light leading-6 text-gray-500">
-            We’ve streamlined the journey so you can set up, practice, and go live with confidence.
+            {t("steps.description")}
           </p>
         </div>
 
@@ -45,23 +47,23 @@ export const StepsSection = () => {
           <div className="relative flex w-full flex-col">
             <StepCard
               stepNumber="1"
-              title="First Step"
-              subtitle="Create your Everwin account."
-              description="Sign up in minutes and unlock your dashboard to start exploring the platform right away."
+              title={t("steps.item_1.step")}
+              subtitle={t("steps.item_1.title")}
+              description={t("steps.item_1.desc")}
             />
 
             <StepCard
               stepNumber="2"
-              title="Second Step"
-              subtitle="Practice inside Everwin — risk-free."
-              description="Get a demo balance to test strategies with Everwin tools until you feel consistent and confident."
+              title={t("steps.item_2.step")}
+              subtitle={t("steps.item_2.title")}
+              description={t("steps.item_2.desc")}
             />
 
             <StepCard
               stepNumber="3"
-              title="Third Step"
-              subtitle="Deposit and go live."
-              description="Make your first deposit and access a broader set of assets — with simple controls and clear execution."
+              title={t("steps.item_3.step")}
+              subtitle={t("steps.item_3.title")}
+              description={t("steps.item_3.desc")}
             />
           </div>
         </div>

@@ -1,23 +1,22 @@
-// everwin-page/src/sections/Footer/components/FooterContent.ts
+//
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
-
-
-const POLICIES = [
-  { label: "Privacy", to: "/legal/privacy" },
-  { label: "Payment", to: "/legal/payment-policy" },
-  { label: "General Fees", to: "/legal/general-fees" },
-  { label: "Terms and conditions", to: "/legal/terms" },
-  { label: "Legal AML", to: "/legal/aml" },
+const POLICIES_KEYS = [
+  { key: "footer.links.privacy", to: "/legal/privacy" },
+  { key: "footer.links.payment", to: "/legal/payment-policy" },
+  { key: "footer.links.general_fees", to: "/legal/general-fees" },
+  { key: "footer.links.terms", to: "/legal/terms" },
+  { key: "footer.links.aml", to: "/legal/aml" },
 ];
 
-const MORE = [
-  { label: "Withdrawal Policy", to: "/legal/withdrawal-policy" },
-  { label: "Risk Disclosure", to: "/legal/risk-disclosure" },
-  { label: "Order Fulfillment", to: "/legal/order-execution" },
-  { label: "Margin Trading", to: "/legal/margin-trading" },
-  { label: "Cookies", to: "/legal/cookies" },
-  { label: "Demo and tournament", to: "/legal/demo-accounts" },
+const MORE_KEYS = [
+  { key: "footer.links.withdrawal", to: "/legal/withdrawal-policy" },
+  { key: "footer.links.risk", to: "/legal/risk-disclosure" },
+  { key: "footer.links.order_execution", to: "/legal/order-execution" },
+  { key: "footer.links.margin", to: "/legal/margin-trading" },
+  { key: "footer.links.cookies", to: "/legal/cookies" },
+  { key: "footer.links.demo", to: "/legal/demo-accounts" },
 ];
 
 function linkCls(extra?: string) {
@@ -29,7 +28,7 @@ function linkCls(extra?: string) {
 }
 
 export const FooterContent = () => {
-  
+  const { t } = useTranslation();
 
   return (
     <div className="mx-auto w-[90%] max-w-[1060px] flex flex-col gap-10 md:flex-row md:gap-10">
@@ -45,8 +44,8 @@ export const FooterContent = () => {
         </Link>
 
         <p className="font-bricolage_grotesque text-base leading-[22px] text-white">
-          One brokerage firm,{" "}
-          <span className="text-emerald-500">countless investment opportunities.</span>
+          {t("footer.slogan_1")}{" "}
+          <span className="text-emerald-500">{t("footer.slogan_2")}</span>
         </p>
       </div>
 
@@ -59,13 +58,13 @@ export const FooterContent = () => {
         {/* Policies */}
         <div className="flex flex-col gap-4">
           <p className="text-white text-lg font-semibold font-bricolage_grotesque">
-            Policies
+            {t("footer.policies_title")}
           </p>
 
           <div className="flex flex-col gap-2">
-            {POLICIES.map((it) => (
+            {POLICIES_KEYS.map((it) => (
               <Link key={it.to} to={it.to} className={linkCls()}>
-                {it.label}
+                {t(it.key)}
               </Link>
             ))}
           </div>
@@ -74,13 +73,13 @@ export const FooterContent = () => {
         {/* More */}
         <div className="flex flex-col gap-4">
           <p className="text-white text-lg font-semibold font-bricolage_grotesque">
-            Legal
+            {t("footer.legal_title")}
           </p>
 
           <div className="flex flex-col gap-2">
-            {MORE.map((it) => (
+            {MORE_KEYS.map((it) => (
               <Link key={it.to} to={it.to} className={linkCls()}>
-                {it.label}
+                {t(it.key)}
               </Link>
             ))}
           </div>

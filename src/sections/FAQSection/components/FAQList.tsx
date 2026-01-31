@@ -1,33 +1,6 @@
-// everwin-page/src/sections/FAQSection/components/FAQList.tsx
+//
 import { useId, useState } from "react";
-
-type FAQ = {
-  q: string;
-  a: string;
-};
-
-const FAQS: FAQ[] = [
-  {
-    q: "What’s the minimum deposit and withdrawal on Everwin?",
-    a: "Minimum amounts can vary by payment method and region. You’ll always see it clearly in the deposit/withdraw screen before confirming the request.",
-  },
-  {
-    q: "Can I withdraw funds whenever I want?",
-    a: "You can request a withdrawal at any time. Processing time depends on the method you choose and account verification steps designed to keep your account secure.",
-  },
-  {
-    q: "Is there a demo account to practice first?",
-    a: "Yes. Everwin provides a demo environment so you can test the platform and build confidence before using real funds.",
-  },
-  {
-    q: "Can I use Everwin on mobile?",
-    a: "Yes. You can access your account from mobile and desktop. The experience is designed to stay smooth even on smaller screens.",
-  },
-  {
-    q: "How do I contact Everwin support?",
-    a: "If you need help, you can contact the support team by email or through the help options available inside the platform. If something is urgent, include your account email and a short description of the issue.",
-  },
-];
+import { useTranslation } from "react-i18next";
 
 function Chevron({ open }: { open: boolean }) {
   return (
@@ -52,20 +25,24 @@ function Chevron({ open }: { open: boolean }) {
 }
 
 export const FAQList = () => {
+  const { t } = useTranslation();
   const [openIndex, setOpenIndex] = useState<number | null>(0);
   const baseId = useId();
+
+  // 5 items, indices 0..4
+  const indices = [0, 1, 2, 3, 4];
 
   return (
     <div className="mx-auto w-full max-w-[1060px]">
       <div className="flex w-full flex-col gap-y-[14px]">
-        {FAQS.map((item, idx) => {
-          const isOpen = openIndex === idx;
-          const panelId = `${baseId}-panel-${idx}`;
-          const buttonId = `${baseId}-btn-${idx}`;
+        {indices.map((i) => {
+          const isOpen = openIndex === i;
+          const panelId = `${baseId}-panel-${i}`;
+          const buttonId = `${baseId}-btn-${i}`;
 
           return (
             <div
-              key={idx}
+              key={i}
               className={[
                 "w-full rounded-xl bg-slate-50 p-4",
                 "ring-1 ring-gray-900/5",
@@ -76,11 +53,11 @@ export const FAQList = () => {
                 type="button"
                 aria-expanded={isOpen}
                 aria-controls={panelId}
-                onClick={() => setOpenIndex((prev) => (prev === idx ? null : idx))}
+                onClick={() => setOpenIndex((prev) => (prev === i ? null : i))}
                 className="flex w-full items-center justify-between gap-x-4 text-left"
               >
                 <p className="font-bricolage_grotesque text-base font-semibold leading-6 text-gray-800 md:text-lg md:leading-7">
-                  {item.q}
+                  {t(`faq.items.${i}.q`)}
                 </p>
 
                 <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white ring-1 ring-gray-900/5">
@@ -102,7 +79,7 @@ export const FAQList = () => {
                 <div className="overflow-hidden">
                   <div className="pt-3">
                     <p className="font-bricolage_grotesque text-sm leading-6 text-gray-600 md:text-base md:leading-[26px]">
-                      {item.a}
+                      {t(`faq.items.${i}.a`)}
                     </p>
                   </div>
                 </div>

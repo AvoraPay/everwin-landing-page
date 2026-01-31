@@ -2,10 +2,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const STORAGE_KEY = "everwin_disclaimer_accepted_v1";
 
 export const DisclaimerBanner = () => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -43,11 +45,7 @@ export const DisclaimerBanner = () => {
 
         {/* Text */}
         <p className="text-[13px] leading-[19.5px] font-sora pr-8">
-          Everwin is not authorized by the Brazilian Securities and Exchange
-          Commission to publicly offer or broker securities in Brazil. By
-          accessing the Everwin website, the user declares to be aware of and
-          agree to the restrictions indicated here. For more information, please
-          consult the Customer Agreement.
+          {t("disclaimer.text")}
         </p>
 
         {/* Actions */}
@@ -57,7 +55,7 @@ export const DisclaimerBanner = () => {
             onClick={close}
             className="w-full sm:w-auto px-4 py-2 rounded-md border border-white/15 text-slate-50/80 hover:text-slate-50 hover:border-white/25 transition font-sora text-sm"
           >
-            Close
+            {t("disclaimer.close")}
           </button>
 
           <button
@@ -65,7 +63,7 @@ export const DisclaimerBanner = () => {
             onClick={accept}
             className="w-full sm:w-auto px-4 py-2 rounded-md bg-white text-gray-900 hover:bg-white/90 transition font-sora text-sm"
           >
-            Agree
+            {t("disclaimer.agree")}
           </button>
         </div>
       </div>
