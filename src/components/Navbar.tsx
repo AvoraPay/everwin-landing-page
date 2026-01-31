@@ -77,7 +77,11 @@ export const Navbar = () => {
 
   const links = useMemo(() => {
     // Default to 'en' only if not 'pt' or 'es'
-    const slug = ["pt", "es"].includes(i18n.language) ? i18n.language : "en";
+    const current = i18n.language;
+    let slug = "en";
+    if (current.startsWith("pt")) slug = "pt";
+    else if (current.startsWith("es")) slug = "es";
+
     return {
       login: `https://app.everwin.trade/${slug}/auth`,
       register: `https://app.everwin.trade/${slug}/auth/register`,
@@ -149,8 +153,8 @@ export const Navbar = () => {
     const currentLang = i18n.language; // or i18n.resolvedLanguage
     // Simple mapping for the main icon
     let Flag = FlagUK;
-    if (currentLang === "pt") Flag = FlagPT;
-    if (currentLang === "es") Flag = FlagES;
+    if (currentLang.startsWith("pt")) Flag = FlagPT;
+    if (currentLang.startsWith("es")) Flag = FlagES;
 
     const changeLanguage = (lng: string) => {
       i18n.changeLanguage(lng);
