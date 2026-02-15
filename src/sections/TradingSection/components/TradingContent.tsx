@@ -1,8 +1,10 @@
 //
 import { useTranslation } from "react-i18next";
+import { useAppLinks } from "../../../hooks/useAppLinks";
 
 export const TradingContent = () => {
   const { t } = useTranslation();
+  const links = useAppLinks();
 
   return (
     <div className="w-full md:max-w-[520px]">
@@ -18,7 +20,7 @@ export const TradingContent = () => {
 
       <div className="mt-10 flex flex-col gap-6 md:flex-row md:items-center">
         <a
-          href="https://app.everwin.trade/en/register"
+          href={links.register}
           className="w-full md:w-auto"
         >
           <div className="rounded-2xl bg-emerald-500/10 p-2 w-full md:w-[240px]">

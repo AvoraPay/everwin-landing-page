@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useAppLinks } from "../hooks/useAppLinks";
 
 const NAV_ITEMS = [
   { labelKey: "navbar.home", id: "top" },
@@ -68,25 +69,13 @@ const FlagES = ({ className = "" }: { className?: string }) => (
 export const Navbar = () => {
   const isDesktop = useIsDesktop(768);
   const { t, i18n } = useTranslation();
+  const links = useAppLinks();
 
   const navigate = useNavigate();
   const location = useLocation();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
-
-  const links = useMemo(() => {
-    // Default to 'en' only if not 'pt' or 'es'
-    const current = i18n.language;
-    let slug = "en";
-    if (current.startsWith("pt")) slug = "pt";
-    else if (current.startsWith("es")) slug = "es";
-
-    return {
-      login: `https://app.everwin.trade/${slug}/auth`,
-      register: `https://app.everwin.trade/${slug}/auth/register`,
-    };
-  }, [i18n.language]);
 
   useEffect(() => {
     if (isDesktop) {

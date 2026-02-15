@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ToolCard } from "./components/ToolCard";
+import { useAppLinks } from "../../hooks/useAppLinks";
 
 type Quote = {
   ok: boolean;
@@ -23,6 +24,7 @@ function fmtPrice(n?: number) {
 
 export const ToolsSection = () => {
   const { t } = useTranslation();
+  const links = useAppLinks();
   const base =
     (import.meta as any)?.env?.VITE_QUOTES_BASE_URL ?? "https://everwin-quotes-worker.brasilcodecenter.workers.dev";
 
@@ -144,7 +146,7 @@ export const ToolsSection = () => {
               </p>
 
               <a
-                href="/register"
+                href={links.register}
                 className="relative flex h-[76px] w-full items-center justify-center overflow-hidden rounded-2xl bg-emerald-500/10 p-2 md:w-[420px]"
               >
                 <div className="flex h-full w-full items-center justify-center rounded-lg bg-emerald-500 p-4">

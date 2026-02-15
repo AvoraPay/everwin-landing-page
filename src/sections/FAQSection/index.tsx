@@ -1,9 +1,11 @@
 //
 import { useTranslation } from "react-i18next";
 import { FAQList } from "./components/FAQList";
+import { useAppLinks } from "../../hooks/useAppLinks";
 
 export const FAQSection = () => {
   const { t } = useTranslation();
+  const links = useAppLinks();
 
   return (
     <section id="faq" className="relative w-full overflow-hidden pt-[90px] pb-20">
@@ -20,7 +22,7 @@ export const FAQSection = () => {
 
           <div className="w-full md:max-w-[260px]">
             <a
-              href="https://app.everwin.trade/en/register"
+              href={links.register}
               className="flex h-[76px] w-full items-center justify-center rounded-2xl bg-emerald-500/10 p-2"
             >
               <div className="flex h-full w-full items-center justify-center rounded-lg bg-emerald-500 px-6">
