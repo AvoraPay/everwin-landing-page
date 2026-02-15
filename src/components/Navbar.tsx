@@ -140,7 +140,6 @@ export const Navbar = () => {
 
   const LanguageButton = useMemo(() => {
     const currentLang = i18n.language; // or i18n.resolvedLanguage
-    // Simple mapping for the main icon
     let Flag = FlagUK;
     if (currentLang.startsWith("pt")) Flag = FlagPT;
     if (currentLang.startsWith("es")) Flag = FlagES;
