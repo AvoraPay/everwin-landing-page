@@ -267,26 +267,28 @@ export const Navbar = () => {
               </nav>
             )}
 
-            {/* RIGHT: actions + language */}
-            <div className="flex items-center gap-2">
-              <a
-                href={links.login}
-                className="inline-flex items-center justify-center h-10 px-4 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-white hover:bg-white hover:text-emerald-700                hover:border-white transition font-bricolage_grotesque text-sm"
-              >
-                {t("navbar.login")}
-              </a>
+            {/* RIGHT: actions + language (desktop only) */}
+            {isDesktop && (
+              <div className="flex items-center gap-2">
+                <a
+                  href={links.login}
+                  className="inline-flex items-center justify-center h-10 px-4 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-white hover:bg-white hover:text-emerald-700 hover:border-white transition font-bricolage_grotesque text-sm"
+                >
+                  {t("navbar.login")}
+                </a>
 
-              <a
-                href={links.register}
-                className="inline-flex items-center justify-center p-1 rounded-xl bg-emerald-500/20 hover:bg-white transition"
-              >
-                <span className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-emerald-500 text-white hover:bg-white hover:text-emerald-700 transition font-bricolage_grotesque text-sm font-medium">
-                  {t("navbar.create_account")}
-                </span>
-              </a>
+                <a
+                  href={links.register}
+                  className="inline-flex items-center justify-center p-1 rounded-xl bg-emerald-500/20 hover:bg-white transition"
+                >
+                  <span className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-emerald-500 text-white hover:bg-white hover:text-emerald-700 transition font-bricolage_grotesque text-sm font-medium">
+                    {t("navbar.create_account")}
+                  </span>
+                </a>
 
-              {isDesktop && LanguageButton}
-            </div>
+                {LanguageButton}
+              </div>
+            )}
           </div>
         </div>
       </div>
