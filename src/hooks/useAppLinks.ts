@@ -15,7 +15,7 @@ export function useAppLinks() {
         else if (current.startsWith("es")) slug = "es";
 
         return {
-            login: `https://app.everwin.trade/${slug}/auth`,
+            login: `https://app.everwin.trade/${slug}/auth/login`,
             register: `https://app.everwin.trade/${slug}/auth/register`,
         };
     }, [i18n.language]);
