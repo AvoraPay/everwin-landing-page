@@ -2,8 +2,180 @@
 @tailwind components;
 @tailwind utilities;
 
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(16,185,129,0.4) transparent;
 }
 
+/* Custom scrollbar - Webkit */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(16,185,129,0.35);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(16,185,129,0.55);
+}
+
+@layer components {
+  .portal-card {
+    @apply overflow-hidden rounded-portal-lg border border-portal-border bg-portal-card;
+    background-image: linear-gradient(-83deg, rgb(23,26,35) 8%, rgb(37,42,54) 171%);
+  }
+  .portal-card-inner {
+    @apply rounded-portal-sm border border-portal-border;
+    background: rgba(255,255,255,0.03);
+  }
+  .portal-label {
+    @apply text-[10px] font-semibold uppercase tracking-[0.18em] text-portal-label;
+  }
+  .portal-text-secondary {
+    @apply text-xs text-portal-secondary;
+  }
+  .portal-input {
+    @apply h-11 rounded-portal-sm border border-portal-border-hover bg-portal-input text-white placeholder:text-white/30 focus:border-emerald-500/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/20;
+  }
+  .portal-focus {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40;
+  }
+}
+
+/* ─── Marquee ─── */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-100%); }
+}
+.animate-marquee {
+  animation: marquee 20s linear infinite;
+}
+
+/* ─── Logo pulse ─── */
+@keyframes logo-pulse {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 0 transparent); }
+  50%      { filter: brightness(1.15) drop-shadow(0 0 8px rgba(16,185,129,0.45)); }
+}
+.logo-pulse {
+  animation: logo-pulse 3s ease-in-out infinite;
+}
+
+/* ─── Fade-in up ─── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out both;
+}
+
+/* ─── Fade-in ─── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out both;
+}
+
+/* ─── Scale-in ─── */
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.animate-scale-in {
+  animation: scaleIn 0.4s ease-out both;
+}
+
+/* ─── Slide-in right ─── */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in-right {
+  animation: slideInRight 0.5s ease-out both;
+}
+
+/* ─── Glow pulse (CTAs) ─── */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+  50%      { box-shadow: 0 0 20px 4px rgba(16,185,129,0.25); }
+}
+.animate-glow {
+  animation: glowPulse 2.5s ease-in-out infinite;
+}
+
+/* ─── Spinner ─── */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+  animation: spin 1.2s linear infinite;
+}
+
+/* ─── Trading chart ─── */
+.trading-grid {
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.09) 1px, transparent 1px);
+  background-size: 52px 52px;
+}
+
+@keyframes trading-ticker {
+  from { transform: translateX(-35%); }
+  to { transform: translateX(130%); }
+}
+.trading-ticker-line {
+  position: absolute;
+  left: -35%;
+  display: block;
+  height: 2px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.6), transparent);
+  animation-name: trading-ticker;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes trading-chart {
+  0%, 100% { opacity: 0.18; }
+  50% { opacity: 0.48; }
+}
+.trading-chart-stroke {
+  fill: none;
+  stroke: rgba(16, 185, 129, 0.5);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.5px;
+  animation: trading-chart 4.2s ease-in-out infinite;
+}
+.trading-chart-delay {
+  animation-delay: -1.2s;
+}
+
+@keyframes trading-candle {
+  0%, 100% { opacity: 0.45; transform: translateY(0); }
+  50% { opacity: 0.9; transform: translateY(-5px); }
+}
+.trading-candle {
+  position: absolute;
+  bottom: 0;
+  width: 6px;
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.14);
+  animation-name: trading-candle;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+.trading-candle-body {
+  position: absolute;
+  inset-inline: -2px;
+  bottom: 18%;
+  border-radius: 9999px;
+  background: rgba(16, 185, 129, 0.5);
+}

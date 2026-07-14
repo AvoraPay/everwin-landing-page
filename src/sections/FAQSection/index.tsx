@@ -26,7 +26,7 @@ export const FAQSection = () => {
               className="flex h-[76px] w-full items-center justify-center rounded-2xl bg-emerald-500/10 p-2"
             >
               <div className="flex h-full w-full items-center justify-center rounded-lg bg-emerald-500 px-6">
-                <p className="text-center font-bricolage_grotesque text-base font-medium leading-6 text-gray-800">
+                <p className="text-center font-bricolage_grotesque text-base font-medium leading-6 text-white">
                   {t("faq.cta")}
                 </p>
               </div>

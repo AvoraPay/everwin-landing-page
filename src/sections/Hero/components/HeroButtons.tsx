@@ -19,7 +19,7 @@ export const HeroButtons = () => {
         className="group relative w-full max-w-[260px] overflow-hidden rounded-2xl bg-emerald-500/10 p-2"
       >
         <div className="flex h-[64px] items-center justify-center rounded-lg bg-emerald-500 px-6 transition-transform duration-300 group-hover:scale-[1.01]">
-          <span className="font-bricolage_grotesque text-base font-medium text-gray-900">
+          <span className="font-bricolage_grotesque text-base font-medium text-white">
             {t("hero.start_now")}
           </span>
         </div>

@@ -54,7 +54,7 @@ export const WithdrawalForm: React.FC<Props> = ({ className }) => {
           </p>
         </div>
 
-        <button className="h-[42px] px-6 rounded-[10px] bg-emerald-500 text-gray-900 font-bricolage_grotesque shadow-[0_0_70px_rgba(28,199,142,0.20)]">
+        <button className="h-[42px] px-6 rounded-[10px] bg-emerald-500 text-white font-bricolage_grotesque shadow-[0_0_70px_rgba(28,199,142,0.20)]">
           Withdraw
         </button>
       </div>

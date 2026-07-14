@@ -150,7 +150,7 @@ export const ToolsSection = () => {
                 className="relative flex h-[76px] w-full items-center justify-center overflow-hidden rounded-2xl bg-emerald-500/10 p-2 md:w-[420px]"
               >
                 <div className="flex h-full w-full items-center justify-center rounded-lg bg-emerald-500 p-4">
-                  <p className="font-bricolage_grotesque text-gray-800 text-base font-medium">
+                  <p className="font-bricolage_grotesque text-white text-base font-medium">
                     {t("tools.cta_button")}
                   </p>
                 </div>

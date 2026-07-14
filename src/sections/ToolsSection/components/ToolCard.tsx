@@ -283,7 +283,7 @@ export const ToolCard = (props: ToolCardProps) => {
                             <span
                               className={`rounded px-2 py-[2px] text-[10px] font-bricolage_grotesque ${
                                 e.active
-                                  ? "bg-emerald-500 text-gray-900"
+                                  ? "bg-emerald-500 text-white"
                                   : "text-white/60"
                               }`}
                             >

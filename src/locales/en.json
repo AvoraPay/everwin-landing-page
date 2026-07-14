@@ -1,4 +1,8 @@
 {
+  "announcement": {
+    "text": "Prop Trading now available — trade with up to $75K funded",
+    "cta": "Learn more"
+  },
   "navbar": {
     "home": "Home",
     "assets": "Assets",
@@ -6,13 +10,21 @@
     "tutorials": "Tutorials",
     "support": "Support",
     "faq": "FAQ",
+    "affiliate": "Partners",
+    "prop": "Prop Firm",
+    "language": "Language",
     "login": "Login",
     "create_account": "Create account"
+  },
+  "languages": {
+    "pt": "Português",
+    "en": "English",
+    "es": "Español"
   },
   "hero": {
     "heading_1": "One platform,",
     "heading_2": "endless <0>opportunities.</0>",
-    "description": "Invest in global stocks, forex, and 200+ other assets — in a simple way.",
+    "description": "Predict price movements with fixed-time trades. A highly volatile market, transparent execution, and immediate results.",
     "start_now": "Start Now",
     "find_out_more": "Find out more"
   },
@@ -26,9 +38,9 @@
     "price": "Price"
   },
   "assets": {
-    "headline_1": "Assets to invest in,",
-    "headline_2": "in a completely uncomplicated way.",
-    "subtitle": "Choose one of the assets and start investing with just a few clicks."
+    "headline_1": "Assets to trade",
+    "headline_2": "binary options with clarity.",
+    "subtitle": "Choose an asset, predict the price direction, and profit from fixed-time trades."
   },
   "tools": {
     "header_title": "Tools traders love",
@@ -127,7 +139,7 @@
       "desc": "Distributed as profits to our users!"
     },
     "stat_2": {
-      "label": "Users Investing"
+      "label": "Active Users"
     },
     "stat_3": {
       "label": "New traders",
@@ -136,10 +148,10 @@
   },
   "trading": {
     "title_1": "Simplify your",
-    "title_2": "trading strategy.",
+    "title_2": "options strategy.",
     "description": "Open a buy or sell position, and if, after the chosen time, the asset has moved in your favor, you will receive your profits immediately!",
     "cta": "Start Now",
-    "stat_label": "Users Investing"
+    "stat_label": "Active Users"
   },
   "deposit": {
     "title_1": "Fast deposit,",
@@ -167,30 +179,44 @@
     }
   },
   "footer": {
-    "slogan_1": "One brokerage firm,",
-    "slogan_2": "countless investment opportunities.",
+    "slogan_1": "Binary options trading,",
+    "slogan_2": "transparent execution.",
     "policies_title": "Policies",
     "legal_title": "Legal",
     "links": {
       "privacy": "Privacy",
       "payment": "Payment",
-      "general_fees": "General Fees",
-      "terms": "Terms and conditions",
-      "aml": "Legal AML",
-      "withdrawal": "Withdrawal Policy",
+    "general_fees": "General Fees",
+    "terms": "Terms and conditions",
+    "prop_trading_terms": "Prop Trading Terms",
+    "prop_evaluation": "Prop Evaluation",
+    "prop_plans": "Plans and Fees",
+    "prop_access": "Access and Credentials",
+    "prop_account_access_policy": "Prop Account Access",
+    "prop_payout": "Prop Payout",
+    "prop_purchase_reset": "Purchases and Resets",
+    "prop_trading_restrictions": "Trading Restrictions",
+    "aml": "Legal AML",
+    "withdrawal": "Withdrawal Policy",
       "risk": "Risk Disclosure",
       "order_execution": "Order Fulfillment",
       "margin": "Margin Trading",
       "cookies": "Cookies",
-      "demo": "Demo and tournament"
+      "demo": "Demo and tournament",
+      "account_closure": "Account Closure"
     },
     "disclaimer": {
-      "title": "DISCLAIMER",
-      "text_1": "Financial operations on this site may involve risks. Using the tools and services provided here may lead to financial losses, including the total loss of funds in your Everwin account. Assess the risks and speak with an independent financial advisor before making any trades. Everwin is not responsible for any direct, indirect, consequential losses or any other damages arising from the user's actions on the platform.",
-      "text_2": "Everwin and any of its services are not intended for or offered to residents of Brazil. Everwin does not advertise its services in Brazil or to users residing in Brazil, and no content on this website should be interpreted in this way. Everwin is not authorized by the Brazilian Securities and Exchange Commission to publicly offer or broker offerings of securities in Brazil.",
-      "text_3": "Everwin does not open accounts for residents or citizens of countries or jurisdictions subject to international high-risk lists or AML/CFT-related sanctions, including but not limited to: United States, the European Union, the United Kingdom, Canada, Israel, North Korea, Iran, Myanmar, Syria, Sudan, Cuba, and any other country identified by the FATF as High-Risk or Under Increased Monitoring. Users located in these regions are not eligible to use Everwin's services, and it is the user's sole responsibility to ensure that accessing the platform is permitted under the laws of their jurisdiction."
+      "title": "LEGAL DISCLAIMER",
+      "text_1": "Binary options trading involves high risk and may not be suitable for all investors. You may lose part or all of your funds. Assess your experience level and financial objectives before trading. Everwin does not guarantee profits and is not responsible for losses arising from platform use.",
+      "text_2": "Everwin Capital Trading Global operates under license ATL-2938-EN and Master License GLH-OCCHKTW0712222025. The company is regulated and authorized to provide binary options trading services in permitted jurisdictions. Everwin is not authorized by Brazil's CVM to offer services in Brazil.",
+      "text_3": "Everwin does not open accounts for residents or citizens of countries subject to international sanctions or FATF high-risk lists, including but not limited to: United States, Canada, Israel, North Korea, Iran, Myanmar, Syria, Sudan, and Cuba. It is the user's responsibility to verify whether access is permitted in their jurisdiction."
     },
-    "copyright": "© 2026 Everwin, All rights reserved.",
+    "company_name": "Everwin Capital Trading Global",
+    "company_registration": "Registered in Curaçao — License ATL-2938-EN",
+    "company_license": "Master License Gaming Services Provider N.V. #365/JAZ — GLH-OCCHKTW0712222025",
+    "company_address": "7 Nieuwestraat, Willemstad, Curaçao",
+    "payment_agent": "Payment Agent: Mega Trading Limited — Chytron 590, 2nd floor, office 53-A, 1259 Nicosia, Cyprus",
+    "copyright": "© 2026 Everwin Capital Trading Global. All rights reserved.",
     "follow": "Follow Everwin:"
   },
   "legal_section": {
@@ -200,6 +226,14 @@
     "sidebar": {
       "privacy": "Privacy Policy",
       "terms": "Terms & Conditions",
+      "prop_trading_terms": "Prop Trading Terms",
+      "prop_evaluation": "Prop Evaluation Policy",
+      "prop_plans": "Prop Plans & Fees",
+      "prop_access": "Prop Access & Credentials",
+      "prop_account_access_policy": "Prop Account Access Policy",
+      "prop_payout": "Prop Payout Policy",
+      "prop_purchase_reset": "Purchases, Resets & Cancellations",
+      "prop_trading_restrictions": "Prop Trading Restrictions",
       "cookies": "Cookies Policy",
       "payment": "Payment Policy",
       "withdrawal": "Withdrawal Policy",
@@ -208,7 +242,158 @@
       "order_execution": "Order Execution Policy",
       "margin": "Margin Trading",
       "aml": "AML & KYC Policy",
-      "demo": "Demo Accounts"
+      "demo": "Demo Accounts",
+      "account_closure": "Account Closure Policy"
+    }
+  },
+  "prop": {
+    "hero": {
+      "badge": "Options Prop Firm",
+      "heading_1": "Prove Your Skill.",
+      "heading_2": "Get Funded.",
+      "description": "Pass our two-phase evaluation trading options and receive up to $75,000 in funded capital. Keep up to 90% of what you earn.",
+      "cta": "Start Your Challenge",
+      "stat_capital": "Up to $75K",
+      "stat_capital_label": "Funded Capital",
+      "stat_split": "Up to 90%",
+      "stat_split_label": "Profit Split",
+      "stat_refund": "100%",
+      "stat_refund_label": "Fee Refund"
+    },
+    "how": {
+      "title_1": "How It",
+      "title_2": "Works",
+      "description": "A clear path from challenge to funded trader — designed for consistency, not luck.",
+      "step_1": {
+        "phase": "Phase 1",
+        "title": "Evaluation",
+        "desc": "Demonstrate your skill by hitting a 10% profit target within 30 days while respecting drawdown limits. Trade at least 5 days."
+      },
+      "step_2": {
+        "phase": "Phase 2",
+        "title": "Verification",
+        "desc": "Confirm your consistency with a 15% target in another 30-day cycle. Same rules, bigger goal — prove you can do it again."
+      },
+      "step_3": {
+        "phase": "Funded",
+        "title": "Live Trading",
+        "desc": "Trade with real capital. Keep up to 90% of profits. Your evaluation fee is refunded on your first payout."
+      }
+    },
+    "plans": {
+      "title_1": "Choose Your",
+      "title_2": "Challenge",
+      "description": "Select the account size that matches your trading style. All plans include the same evaluation rules.",
+      "popular": "Most Popular",
+      "account_size": "Account Size",
+      "fee": "Evaluation Fee",
+      "phase1_target": "Phase 1 Target",
+      "phase2_target": "Phase 2 Target",
+      "max_drawdown": "Max Drawdown",
+      "daily_drawdown": "Daily Drawdown",
+      "duration": "Duration",
+      "min_days": "Min Trading Days",
+      "profit_split": "Profit Split",
+      "cta": "Start Challenge",
+      "refund_note": "Fee refunded on first funded payout",
+      "plan_1": {
+        "size": "$12,500",
+        "price": "$199"
+      },
+      "plan_2": {
+        "size": "$25,000",
+        "price": "$349"
+      },
+      "plan_3": {
+        "size": "$50,000",
+        "price": "$549"
+      },
+      "plan_4": {
+        "size": "$75,000",
+        "price": "$999"
+      },
+      "values": {
+        "phase1": "10%",
+        "phase2": "15%",
+        "drawdown": "5%",
+        "daily": "3%",
+        "duration": "30 days",
+        "min_days": "5 days",
+        "split": "80% → 90%"
+      }
+    },
+    "rules": {
+      "title_1": "Challenge",
+      "title_2": "Rules",
+      "description": "Transparent rules built for serious traders. No hidden gotchas.",
+      "rule_1": {
+        "title": "Max Drawdown",
+        "desc": "Your account cannot draw down more than 5% from the starting balance."
+      },
+      "rule_2": {
+        "title": "Daily Drawdown",
+        "desc": "Your daily loss cannot exceed 3% of the account balance at start of day."
+      },
+      "rule_3": {
+        "title": "Minimum Trading Days",
+        "desc": "You must trade at least 5 separate days during each phase."
+      },
+      "rule_4": {
+        "title": "Profit Split",
+        "desc": "Start at 80/20 split. Scale to 90/10 with consistent performance over time."
+      },
+      "rule_5": {
+        "title": "Fee Refund",
+        "desc": "Your evaluation fee is fully refunded on your first funded account payout."
+      },
+      "rule_6": {
+        "title": "Cooldown Period",
+        "desc": "If you fail, you must wait 7 days before starting a new challenge."
+      },
+      "rule_7": {
+        "title": "Scaling Plan",
+        "desc": "Consistent funded traders can scale their account up to 2x the original size."
+      },
+      "rule_8": {
+        "title": "No Weekend Holding",
+        "desc": "All positions must be closed before the market close on Friday."
+      }
+    },
+    "faq": {
+      "title": "Prop Firm FAQ",
+      "description": "Everything you need to know about the Everwin Options Evaluation.",
+      "items": {
+        "0": {
+          "q": "What happens if I fail the evaluation?",
+          "a": "If you breach drawdown limits or time runs out, you can retry after a 7-day cooldown. You'll need to purchase a new evaluation."
+        },
+        "1": {
+          "q": "How is the profit split calculated?",
+          "a": "You start at 80% profit split. As you demonstrate consistency over multiple payout cycles, you can scale up to 90%."
+        },
+        "2": {
+          "q": "Is the evaluation fee really refundable?",
+          "a": "Yes. 100% of your evaluation fee is added to your first payout from the funded account."
+        },
+        "3": {
+          "q": "Can I trade any options strategy?",
+          "a": "You're free to use any strategy within the rules — directional, spreads, or hedges. Just respect the drawdown and weekend-holding rules."
+        },
+        "4": {
+          "q": "How long does verification take after I pass Phase 2?",
+          "a": "Our team reviews your trading performance within 48 hours. Once approved, your funded account is set up the same day."
+        },
+        "5": {
+          "q": "What is the scaling plan?",
+          "a": "After 3 consecutive months of profitable trading on a funded account, you become eligible to double your account size — completely free."
+        }
+      }
+    },
+    "cta": {
+      "title_1": "Ready to",
+      "title_2": "Get Funded?",
+      "description": "Join hundreds of options traders who already proved their edge. Choose a plan and start your evaluation today.",
+      "button": "Start Your Challenge Now"
     }
   }
 }

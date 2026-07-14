@@ -16,7 +16,7 @@ export const LegalLayout = () => {
   useEffect(() => setOpen(false), [location.pathname]);
 
   return (
-    <div className="w-full bg-neutral-100 p-5">
+    <div className="w-full bg-neutral-100 p-5 pt-[100px] md:pt-[114px]">
       {/* container igual Home */}
       <div className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8">
         {/* espaçamento vertical igual “seção” */}
@@ -95,10 +95,10 @@ export const LegalLayout = () => {
         <>
           <button
             aria-label="Close overlay"
-            className="fixed inset-0 z-40 bg-black/40"
+            className="fixed inset-0 z-[70] bg-black/40"
             onClick={() => setOpen(false)}
           />
-          <div className="fixed inset-y-0 right-0 z-50 w-[86%] max-w-[380px] bg-white border-l border-gray-200 shadow-2xl">
+          <div className="fixed inset-y-0 right-0 z-[71] w-[86%] max-w-[380px] bg-white border-l border-gray-200 shadow-2xl">
             <div className="h-16 px-4 flex items-center justify-between border-b border-gray-200">
               <p className="font-bricolage_grotesque font-semibold text-gray-900">
                 {t("legal_section.policies_title")}

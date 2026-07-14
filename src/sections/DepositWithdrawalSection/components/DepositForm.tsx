@@ -125,7 +125,7 @@ export const DepositForm: React.FC<Props> = ({ className }) => {
       </div>
 
       {/* CTA */}
-      <button className="mt-6 w-full h-[46px] rounded-[12px] bg-emerald-500 text-gray-900 font-bricolage_grotesque shadow-[0_0_80px_rgba(28,199,142,0.22)]">
+      <button className="mt-6 w-full h-[46px] rounded-[12px] bg-emerald-500 text-white font-bricolage_grotesque shadow-[0_0_80px_rgba(28,199,142,0.22)]">
         Depositar R$60
       </button>
     </div>

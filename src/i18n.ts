@@ -1,35 +1,56 @@
-
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
-import LanguageDetector from "i18next-browser-languagedetector";
-
 import en from "./locales/en.json";
 import pt from "./locales/pt.json";
 import es from "./locales/es.json";
+import { propSupplemental } from "./locales/propSupplemental";
+import {
+  applyAutomaticLanguage,
+  getInitialAppLanguage,
+  normalizeAppLanguage,
+  setDocumentLanguage,
+} from "./lib/language";
 
-i18n
-    .use(LanguageDetector)
-    .use(initReactI18next)
-    .init({
-        resources: {
-            en: {
-                translation: en,
-            },
-            pt: {
-                translation: pt,
-            },
-            es: {
-                translation: es,
-            },
+const initialLanguage = getInitialAppLanguage();
+
+const initPromise = i18n
+  .use(initReactI18next)
+  .init({
+    lng: initialLanguage,
+    resources: {
+      en: {
+        translation: {
+          ...en,
+          ...propSupplemental.en,
         },
-        fallbackLng: "en",
-        interpolation: {
-            escapeValue: false, // react already safes from xss
+      },
+      pt: {
+        translation: {
+          ...pt,
+          ...propSupplemental.pt,
         },
-        detection: {
-            order: ['localStorage'],
-            caches: ['localStorage'],
-        }
-    });
+      },
+      es: {
+        translation: {
+          ...es,
+          ...propSupplemental.es,
+        },
+      },
+    },
+    fallbackLng: "en",
+    supportedLngs: ["en", "pt", "es"],
+    nonExplicitSupportedLngs: true,
+    interpolation: {
+      escapeValue: false,
+    },
+  });
+
+setDocumentLanguage(initialLanguage);
+
+i18n.on("languageChanged", (language) => {
+  setDocumentLanguage(normalizeAppLanguage(language));
+});
+
+void initPromise.then(() => applyAutomaticLanguage(i18n));
 
 export default i18n;

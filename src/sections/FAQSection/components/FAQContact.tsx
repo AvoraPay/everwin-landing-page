@@ -19,7 +19,7 @@ export const FAQContact = () => {
             >
               <div className="relative content-center items-center bg-emerald-500 box-border caret-transparent gap-x-2 flex basis-0 grow shrink-0 h-full justify-center gap-y-2 w-px p-4 rounded-lg">
                 <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start text-nowrap">
-                  <p className="text-gray-800 text-base font-medium box-border caret-transparent tracking-[0.16px] leading-6 text-center text-nowrap font-bricolage_grotesque">
+                  <p className="text-white text-base font-medium box-border caret-transparent tracking-[0.16px] leading-6 text-center text-nowrap font-bricolage_grotesque">
                     Send email
                   </p>
                 </div>

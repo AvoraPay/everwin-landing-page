@@ -13,7 +13,6 @@ import { StepsSection } from "../sections/StepsSection";
 import { FAQSection } from "../sections/FAQSection";
 
 export default function Home() {
-  // garante que ao entrar na home, o scroll volta pro topo (padrão de landing)
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
   }, []);
@@ -31,8 +30,9 @@ export default function Home() {
         <ToolsSection />
         <StepsSection />
         <FAQSection />
-        <SupportSection />
       </div>
+
+      <SupportSection />
     </div>
   );
 }

@@ -1,4 +1,8 @@
 {
+    "announcement": {
+        "text": "Prop Trading disponível — opere com até $75K financiados",
+        "cta": "Saiba mais"
+    },
     "navbar": {
         "home": "Início",
         "assets": "Ativos",
@@ -6,13 +10,21 @@
         "tutorials": "Tutoriais",
         "support": "Suporte",
         "faq": "FAQ",
+        "affiliate": "Afiliados",
+        "prop": "Prop Firm",
+        "language": "Idioma",
         "login": "Entrar",
         "create_account": "Criar conta"
+    },
+    "languages": {
+        "pt": "Português",
+        "en": "English",
+        "es": "Español"
     },
     "hero": {
         "heading_1": "Uma plataforma,",
         "heading_2": "oportunidades <0>infinitas.</0>",
-        "description": "Invista em ações globais, forex e mais de 200 outros ativos — de forma simples.",
+        "description": "Preveja movimentos de preço com operações de tempo fixo. Mercado de altíssima volatilidade, execução transparente e resultados imediatos.",
         "start_now": "Comece Agora",
         "find_out_more": "Saiba mais"
     },
@@ -26,9 +38,9 @@
         "price": "Preço"
     },
     "assets": {
-        "headline_1": "Ativos para investir,",
-        "headline_2": "de forma completamente descomplicada.",
-        "subtitle": "Escolha um dos ativos e comece a investir com apenas alguns cliques."
+        "headline_1": "Ativos para operar",
+        "headline_2": "com precisão e clareza.",
+        "subtitle": "Escolha um ativo, preveja a direção do preço e lucre com operações de tempo fixo."
     },
     "tools": {
         "header_title": "Ferramentas que traders amam",
@@ -127,7 +139,7 @@
             "desc": "Distribuídos como lucros aos nossos usuários!"
         },
         "stat_2": {
-            "label": "Usuários Investindo"
+            "label": "Usuários Ativos"
         },
         "stat_3": {
             "label": "Novos traders",
@@ -136,10 +148,10 @@
     },
     "trading": {
         "title_1": "Simplifique sua",
-        "title_2": "estratégia de negociação.",
+        "title_2": "estratégia de mercado.",
         "description": "Abra uma posição de compra ou venda e se, após o tempo escolhido, o ativo se mover a seu favor, você receberá seus lucros imediatamente!",
         "cta": "Comece Agora",
-        "stat_label": "Usuários Investindo"
+        "stat_label": "Usuários Ativos"
     },
     "deposit": {
         "title_1": "Depósito rápido,",
@@ -167,30 +179,44 @@
         }
     },
     "footer": {
-        "slogan_1": "Uma corretora,",
-        "slogan_2": "inúmeras oportunidades de investimento.",
+        "slogan_1": "Trading de alta volatilidade,",
+        "slogan_2": "execução transparente.",
         "policies_title": "Políticas",
         "legal_title": "Legal",
         "links": {
             "privacy": "Privacidade",
             "payment": "Pagamento",
-            "general_fees": "Taxas Gerais",
-            "terms": "Termos e Condições",
-            "aml": "AML Legal",
-            "withdrawal": "Política de Saque",
+        "general_fees": "Taxas Gerais",
+        "terms": "Termos e Condições",
+        "prop_trading_terms": "Termos do Prop Trading",
+        "prop_evaluation": "Avaliação Prop",
+        "prop_plans": "Planos e Taxas",
+        "prop_access": "Acesso e Credenciais",
+        "prop_account_access_policy": "Acesso à Conta Prop",
+        "prop_payout": "Payout Prop",
+        "prop_purchase_reset": "Compras e Reset",
+        "prop_trading_restrictions": "Restrições de Trading",
+        "aml": "AML Legal",
+        "withdrawal": "Política de Saque",
             "risk": "Divulgação de Risco",
             "order_execution": "Execução de Ordens",
             "margin": "Negociação de Margem",
             "cookies": "Cookies",
-            "demo": "Demo e torneio"
+            "demo": "Demo e torneio",
+            "account_closure": "Encerramento de Conta"
         },
         "disclaimer": {
             "title": "AVISO LEGAL",
-            "text_1": "As operações financeiras neste site podem envolver riscos. O uso das ferramentas e serviços fornecidos aqui pode levar a perdas financeiras, incluindo a perda total de fundos em sua conta Everwin. Avalie os riscos e fale com um consultor financeiro independente antes de fazer qualquer negociação. A Everwin não é responsável por quaisquer perdas diretas, indiretas, consequenciais ou quaisquer outros danos decorrentes das ações do usuário na plataforma.",
-            "text_2": "A Everwin e qualquer um de seus serviços não são destinados ou oferecidos a residentes do Brasil. A Everwin não anuncia seus serviços no Brasil ou para usuários residentes no Brasil, e nenhum conteúdo deste site deve ser interpretado dessa maneira. A Everwin não é autorizada pela Comissão de Valores Mobiliários do Brasil a oferecer publicamente ou intermediar ofertas de valores mobiliários no Brasil.",
-            "text_3": "A Everwin não abre contas para residentes ou cidadãos de países ou jurisdições sujeitas a listas internacionais de alto risco ou sanções relacionadas a LBC/CFT, incluindo, mas não se limitando a: Estados Unidos, União Europeia, Reino Unido, Canadá, Israel, Coreia do Norte, Irã, Mianmar, Síria, Sudão, Cuba e qualquer outro país identificado pelo GAFI como de Alto Risco ou Sob Monitoramento Aumentado. Usuários localizados nessas regiões não são elegíveis para usar os serviços da Everwin, e é de responsabilidade exclusiva do usuário garantir que o acesso à plataforma seja permitido pelas leis de sua jurisdição."
+            "text_1": "As operações de opções binárias envolvem risco elevado e podem não ser adequadas para todos os investidores. Você pode perder parte ou todos os seus fundos. Avalie seu nível de experiência e objetivos financeiros antes de operar. A Everwin não garante lucro e não se responsabiliza por perdas decorrentes do uso da plataforma.",
+            "text_2": "A Everwin Capital Trading Global opera sob licença ATL-2938-EN e Master License GLH-OCCHKTW0712222025. A empresa é regulamentada e autorizada para oferecer serviços de trading de opções binárias em jurisdições permitidas. A Everwin não é autorizada pela CVM do Brasil a oferecer serviços no Brasil.",
+            "text_3": "A Everwin não abre contas para residentes ou cidadãos de países sujeitos a sanções internacionais ou listas de alto risco do GAFI, incluindo, mas não se limitando a: Estados Unidos, Canadá, Israel, Coreia do Norte, Irã, Myanmar, Síria, Sudão e Cuba. É responsabilidade do usuário verificar se o acesso é permitido em sua jurisdição."
         },
-        "copyright": "© 2026 Everwin, Todos os direitos reservados.",
+        "company_name": "Everwin Capital Trading Global",
+        "company_registration": "Registrada em Curaçao — Licença ATL-2938-EN",
+        "company_license": "Master License Gaming Services Provider N.V. #365/JAZ — GLH-OCCHKTW0712222025",
+        "company_address": "7 Nieuwestraat, Willemstad, Curaçao",
+        "payment_agent": "Agente de Pagamento: Mega Trading Limited — Chytron 590, 2º andar, escritório 53-A, 1259 Nicósia, Chipre",
+        "copyright": "© 2026 Everwin Capital Trading Global. Todos os direitos reservados.",
         "follow": "Siga a Everwin:"
     },
     "legal_section": {
@@ -198,17 +224,176 @@
         "top_desc": "Políticas e divulgações relacionadas à Everwin.",
         "policies_title": "Políticas",
         "sidebar": {
-            "privacy": "Política de Privacidade",
-            "terms": "Termos e Condições",
-            "cookies": "Política de Cookies",
-            "payment": "Política de Pagamento",
-            "withdrawal": "Política de Saque",
+        "privacy": "Política de Privacidade",
+        "terms": "Termos e Condições",
+        "prop_trading_terms": "Termos de Uso do Prop Trading",
+        "prop_evaluation": "Política de Avaliação Prop",
+        "prop_plans": "Planos Prop e Taxas",
+        "prop_access": "Acesso e Credenciais Prop",
+        "prop_account_access_policy": "Política de Acesso à Conta Prop",
+        "prop_payout": "Política de Payout Prop",
+        "prop_purchase_reset": "Compras, Reset e Cancelamento",
+        "prop_trading_restrictions": "Restrições de Trading Prop",
+        "cookies": "Política de Cookies",
+        "payment": "Política de Pagamento",
+        "withdrawal": "Política de Saque",
             "general_fees": "Taxas Gerais",
             "risk": "Divulgação de Risco",
             "order_execution": "Política de Execução de Ordens",
             "margin": "Negociação de Margem",
             "aml": "Política AML & KYC",
-            "demo": "Contas Demo"
+            "demo": "Contas Demo",
+            "account_closure": "Encerramento de Conta"
+        }
+    },
+    "prop": {
+        "hero": {
+            "badge": "Prop Firm de Opções",
+            "heading_1": "Prove Suas Skills.",
+            "heading_2": "Opere nosso capital.",
+            "description": "Preencha sua avaliação em duas fases e receba até R$ 150.000 em saldo real para operar. Você pode ganhar até 90% do que gerar em resultados.",
+            "cta": "Iniciar Desafio",
+            "stat_capital": "Até R$ 150 mil",
+            "stat_capital_label": "Capital Máximo Financiado",
+            "stat_split": "Até 90%",
+            "stat_split_label": "Divisão de Lucro",
+            "stat_refund": "100%",
+            "stat_refund_label": "Reembolso da Taxa"
+        },
+        "how": {
+            "title_1": "Como",
+            "title_2": "Funciona",
+            "description": "Um caminho simples entre o desafio e o financiamento — projetado para traders consistentes, não sortudos.",
+            "step_1": {
+                "phase": "Fase 1",
+                "title": "Avaliação",
+                "desc": "Demonstre sua habilidade atingindo uma meta de lucro de 10% em 30 dias, respeitando os limites de drawdown. Opere pelo menos 5 dias."
+            },
+            "step_2": {
+                "phase": "Fase 2",
+                "title": "Verificação",
+                "desc": "Confirme sua consistência com uma meta de 15% em outro ciclo de 30 dias. Mesmas regras, meta maior — prove que consegue repetir."
+            },
+            "step_3": {
+                "phase": "Financiado",
+                "title": "Trading Real",
+                "desc": "Opere com capital real e fique com até 90% dos lucros. Ao concluir a avaliação dentro dos critérios, sua taxa de teste será reembolsada no primeiro pagamento."
+            }
+        },
+        "plans": {
+            "title_1": "Escolha Seu",
+            "title_2": "Desafio",
+            "description": "Selecione o volume de fundos que combina com seu estilo de trading. Todos os planos seguem as mesmas regras de avaliação.",
+            "popular": "Mais Popular",
+            "account_size": "Tamanho da Conta",
+            "fee": "Taxa de Avaliação",
+            "phase1_target": "Meta Fase 1",
+            "phase2_target": "Meta Fase 2",
+            "max_drawdown": "Drawdown Máximo",
+            "daily_drawdown": "Drawdown Diário",
+            "duration": "Duração",
+            "min_days": "Dias Mínimos",
+            "profit_split": "Divisão de Lucro",
+            "cta": "Iniciar Desafio",
+            "refund_note": "Disponível por tempo limitado",
+            "plan_1": {
+                "size": "R$ 25.000",
+                "price": "R$ 497"
+            },
+            "plan_2": {
+                "size": "R$ 50.000",
+                "price": "R$ 874"
+            },
+            "plan_3": {
+                "size": "R$ 100.000",
+                "price": "R$ 1.397"
+            },
+            "plan_4": {
+                "size": "R$ 150.000",
+                "price": "R$ 1.497"
+            },
+            "values": {
+                "phase1": "10%",
+                "phase2": "15%",
+                "drawdown": "5%",
+                "daily": "3%",
+                "duration": "30 dias",
+                "min_days": "5 dias",
+                "split": "80% → 90%"
+            }
+        },
+        "rules": {
+            "title_1": "Regras do",
+            "title_2": "Desafio",
+            "description": "Regras transparentes feitas para traders sérios. Sem pegadinhas.",
+            "rule_1": {
+                "title": "Drawdown Máximo",
+                "desc": "Sua conta não pode perder mais de 5% do saldo inicial."
+            },
+            "rule_2": {
+                "title": "Drawdown Diário",
+                "desc": "Sua perda diária não pode exceder 3% do saldo da conta no início do dia."
+            },
+            "rule_3": {
+                "title": "Dias Mínimos de Operação",
+                "desc": "Você deve operar pelo menos 5 dias separados durante cada fase."
+            },
+            "rule_4": {
+                "title": "Divisão de Lucro",
+                "desc": "Comece com 80/20. Escale para 90/10 com performance consistente ao longo do tempo."
+            },
+            "rule_5": {
+                "title": "Reembolso da Taxa",
+                "desc": "Sua taxa de avaliação é totalmente reembolsada no primeiro pagamento da conta financiada."
+            },
+            "rule_6": {
+                "title": "Período de Cooldown",
+                "desc": "Se falhar, você deve esperar 7 dias antes de iniciar um novo desafio."
+            },
+            "rule_7": {
+                "title": "Plano de Escala",
+                "desc": "Traders financiados consistentes podem escalar sua conta até 2x o tamanho original."
+            },
+            "rule_8": {
+                "title": "Sem Posição no Fim de Semana",
+                "desc": "Todas as posições devem ser fechadas antes do fechamento do mercado na sexta-feira."
+            }
+        },
+        "faq": {
+            "title": "FAQ Prop Firm",
+            "description": "Tudo que você precisa saber sobre a Avaliação de Opções Everwin.",
+            "items": {
+                "0": {
+                    "q": "O que acontece se eu falhar na avaliação?",
+                    "a": "Se você violar os limites de drawdown ou o tempo acabar, pode tentar novamente após um cooldown de 7 dias. Será necessário comprar uma nova avaliação."
+                },
+                "1": {
+                    "q": "Como a divisão de lucro é calculada?",
+                    "a": "Você começa com 80% de divisão de lucro. Conforme demonstra consistência em múltiplos ciclos de pagamento, pode escalar até 90%."
+                },
+                "2": {
+                    "q": "A taxa de avaliação é realmente reembolsável?",
+                    "a": "Sim. 100% da sua taxa de avaliação é adicionada ao seu primeiro pagamento da conta financiada."
+                },
+                "3": {
+                    "q": "Posso usar qualquer estratégia de opções?",
+                    "a": "Você é livre para usar qualquer estratégia dentro das regras — direcional, spreads ou hedges. Apenas respeite as regras de drawdown e posição no fim de semana."
+                },
+                "4": {
+                    "q": "Quanto tempo leva a verificação após passar a Fase 2?",
+                    "a": "Nossa equipe analisa seu desempenho de trading em até 48 horas. Uma vez aprovado, sua conta financiada é configurada no mesmo dia."
+                },
+                "5": {
+                    "q": "O que é o plano de escala?",
+                    "a": "Após 3 meses consecutivos de trading lucrativo em conta financiada, você se torna elegível para dobrar o tamanho da sua conta — totalmente grátis."
+                }
+            }
+        },
+        "cta": {
+            "title_1": "Pronto para",
+            "title_2": "operar sem riscos?",
+            "description": "Junte-se a centenas de traders que já provaram suas habilidades. Escolha um plano e inicie sua avaliação hoje mesmo!",
+            "button": "Iniciar Desafio Agora"
         }
     }
 }

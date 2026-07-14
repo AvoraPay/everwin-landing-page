@@ -25,7 +25,7 @@ export const TradingContent = () => {
         >
           <div className="rounded-2xl bg-emerald-500/10 p-2 w-full md:w-[240px]">
             <div className="h-[64px] rounded-xl bg-emerald-500 flex items-center justify-center shadow-[0_18px_40px_rgba(16,185,129,0.18)]">
-              <span className="text-gray-900 font-bricolage_grotesque font-medium">
+              <span className="text-white font-bricolage_grotesque font-medium">
                 {t("trading.cta")}
               </span>
             </div>

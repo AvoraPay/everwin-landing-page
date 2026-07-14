@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 export const TutorialsImage = () => {
   const { t } = useTranslation();
   return (
-    <div className="relative aspect-[1.47948_/_1] box-border caret-transparent shrink-0 min-h-[auto] min-w-[auto] translate-y-[-50.0%] w-[150%] z-[1] right-auto top-auto md:absolute md:min-h-0 md:min-w-0 md:right-[-230px] md:w-4/5 md:top-2/4">
+    <div className="relative aspect-[1.47948_/_1] box-border caret-transparent shrink-0 min-h-[auto] min-w-[auto] w-full z-[1] right-auto top-auto md:absolute md:min-h-0 md:min-w-0 md:right-[-230px] md:w-4/5 md:top-2/4 md:translate-y-[-50.0%]">
       <div className="absolute box-border caret-transparent inset-0">
         <img
           src="https://i.ibb.co/GQ1ns5mj/image-3.png"
@@ -12,7 +12,7 @@ export const TutorialsImage = () => {
           className="aspect-[auto_1477_/_999] box-border caret-transparent h-full object-cover w-full"
         />
       </div>
-      <div className="absolute content-start items-start bg-zinc-900 box-border caret-transparent gap-x-[21.6017px] flex flex-col shrink-0 h-min justify-start gap-y-[21.6017px] translate-x-[-144.5px] translate-y-[-278.351px] w-[289px] overflow-hidden p-[21.6017px] rounded-3xl scale-[0.7] left-[27%] top-[49%] md:left-[30%] md:top-2/4">
+      <div className="absolute content-start items-start bg-zinc-900 box-border caret-transparent gap-x-[21.6017px] flex flex-col shrink-0 h-min justify-start gap-y-[21.6017px] w-[220px] overflow-hidden p-[16px] rounded-3xl scale-[0.6] left-[10%] top-[20%] md:translate-x-[-144.5px] md:translate-y-[-278.351px] md:w-[289px] md:p-[21.6017px] md:scale-[0.7] md:left-[30%] md:top-2/4">
         <div className="relative content-center items-center box-border caret-transparent flex shrink-0 h-min justify-between w-full">
           <div className="relative box-border caret-transparent flex flex-col shrink-0 justify-start text-nowrap">
             <p className="text-stone-200 text-[21.6px] font-medium box-border caret-transparent leading-[21.6px] text-center text-nowrap font-bricolage_grotesque">

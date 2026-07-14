@@ -55,7 +55,7 @@ export function Reveal({
       className={[
         "will-change-transform will-change-opacity",
         "transition-[transform,opacity] ease-out",
-        visible ? "opacity-100 translate-y-0" : `opacity-0 translate-y-[${distance}px]`,
+        visible ? "opacity-100 translate-y-0" : "opacity-0",
         className,
       ].join(" ")}
       style={{

@@ -1,5 +1,6 @@
 // src/pages/legal/LegalPageShell.tsx
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 export function LegalPageShell({
   title,
@@ -12,6 +13,8 @@ export function LegalPageShell({
   lead?: string;
   children: ReactNode;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="w-full max-w-[800px] mx-auto px-4 sm:px-6 lg:px-8 pb-16 md:pb-20">
       <header className="mb-8 md:mb-10 pt-8">
@@ -28,7 +31,7 @@ export function LegalPageShell({
           {updated && (
             <div className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs text-gray-500 font-bricolage_grotesque">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500/70" />
-              <span>Last updated: {updated}</span>
+              <span>{t("legal_page.last_updated")} {updated}</span>
             </div>
           )}
         </div>
