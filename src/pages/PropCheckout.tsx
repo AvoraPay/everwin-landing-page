@@ -353,8 +353,10 @@ export default function PropCheckout() {
       // Save submission code for status tracking
       localStorage.setItem("everwin-prop-last-submission", result.submissionCode);
 
-      // Waitlist mode: redirect to status page (payment link will be sent by admin later)
-      navigate(`/prop/submission?id=${result.submissionCode}`);
+      // Redirect to Novus payment with success/cancel URLs
+      const successUrl = encodeURIComponent(`https://everwin.capital/prop/thank-you?id=${result.submissionCode}`);
+      const cancelUrl = encodeURIComponent(`https://everwin.capital/prop/checkout?plan=${selectedPlan.key}`);
+      window.location.href = `${selectedPlan.paymentUrl}?success_url=${successUrl}&cancel_url=${cancelUrl}`;
     } catch (error) {
       setSubmissionError(error instanceof Error ? error.message : labels.errorFallback);
       setSubmitting(false);

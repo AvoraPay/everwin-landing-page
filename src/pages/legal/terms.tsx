@@ -65,7 +65,7 @@ export default function TermsAndConditions() {
 
         <h3>8. Contact</h3>
         <p>
-          For questions, contact: <strong>support@everwin.trade</strong>
+          For questions, contact: <strong>support@everwin.capital</strong>
         </p>
       </LegalPageBody>
     </LegalPageShell>

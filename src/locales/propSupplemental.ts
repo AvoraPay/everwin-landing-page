@@ -143,7 +143,7 @@ export const propSupplemental = {
           },
           {
             title: "15. Contato",
-            paragraphs: ["Dúvidas sobre esta política: support@everwin.trade"],
+            paragraphs: ["Dúvidas sobre esta política: support@everwin.capital"],
           },
         ],
       },
@@ -659,7 +659,7 @@ export const propSupplemental = {
           },
           {
             title: "15. Contact",
-            paragraphs: ["Questions about this policy: support@everwin.trade"],
+            paragraphs: ["Questions about this policy: support@everwin.capital"],
           },
         ],
       },
@@ -1174,7 +1174,7 @@ export const propSupplemental = {
           },
           {
             title: "15. Contacto",
-            paragraphs: ["Dudas sobre esta política: support@everwin.trade"],
+            paragraphs: ["Dudas sobre esta política: support@everwin.capital"],
           },
         ],
       },

@@ -1,7 +1,7 @@
 # Everwin - Termos de Uso e Políticas de Encerramento de Conta
 
 > **Última atualização:** 13 de julho de 2026
-> **E-mail de suporte:** support@everwin.trade
+> **E-mail de suporte:** support@everwin.capital
 
 ---
 
@@ -206,7 +206,7 @@ O Dukascopy estabelece:
 1. **Receber notificação** via e-mail registrado
 2. **Verificar motivo** do encerramento
 3. **Avaliar possibilidade** de apelação (30 dias)
-4. **Enviar contestação** por escrito para support@everwin.trade
+4. **Enviar contestação** por escrito para support@everwin.capital
 5. **Aguardar análise** pela equipe de compliance
 6. **Receber decisão final** por e-mail
 

@@ -260,7 +260,7 @@ const DEFAULT_VACANCIES_MESSAGE =
 const SETTINGS_META = {
   everwin_admin_bearer: { sensitive: true },
   everwin_webhook_secret: { sensitive: true },
-  prop_vacancies_locked: { sensitive: false, defaultValue: "true" },
+  prop_vacancies_locked: { sensitive: false, defaultValue: "false" },
   prop_vacancies_message: { sensitive: false, defaultValue: DEFAULT_VACANCIES_MESSAGE },
 };
 

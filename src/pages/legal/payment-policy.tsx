@@ -51,7 +51,7 @@ export default function PaymentPolicy() {
 
         <h3>6. Contact</h3>
         <p>
-          Payment questions: <strong>support@everwin.trade</strong>
+          Payment questions: <strong>support@everwin.capital</strong>
         </p>
       </LegalPageBody>
     </LegalPageShell>

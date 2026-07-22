@@ -47,7 +47,7 @@ export default function WithdrawalPolicy() {
 
         <h3>6. Contact</h3>
         <p>
-          Withdrawal support: <strong>support@everwin.trade</strong>
+          Withdrawal support: <strong>support@everwin.capital</strong>
         </p>
       </LegalPageBody>
     </LegalPageShell>

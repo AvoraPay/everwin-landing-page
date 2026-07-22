@@ -5,7 +5,7 @@
 > **Versão:** 3.0
 > **Data de Vigência:** 13 de julho de 2026
 > **Última Revisão:** 13 de julho de 2026
-> **E-mail de Suporte:** support@everwin.trade
+> **E-mail de Suporte:** support@everwin.capital
 > **Idiomas Disponíveis:** Português, Inglês, Espanhol
 
 ---
@@ -274,11 +274,11 @@ Entidade organizada e operada sob as leis de Curaçao, constituída conforme a l
 
 | Canal | Informação |
 |-------|------------|
-| **E-mail Geral** | support@everwin.trade |
+| **E-mail Geral** | support@everwin.capital |
 | **E-mail Jurídico** | legal@everwin.trade |
 | **E-mail Compliance** | compliance@everwin.trade |
 | **E-mail Privacidade** | privacy@everwin.trade |
-| **Suporte ao Cliente** | support@everwin.trade |
+| **Suporte ao Cliente** | support@everwin.capital |
 
 ---
 
@@ -534,7 +534,7 @@ d) A recuperação de acesso para contas Prop poderá exigir documentação comp
 
 ### 11.5 Notificação de Incidentes
 
-11.5.1. O Cliente deverá notificar IMEDIATAMENTE a Everwin (support@everwin.trade) quando:
+11.5.1. O Cliente deverá notificar IMEDIATAMENTE a Everwin (support@everwin.capital) quando:
 
 a) Desconfiar de acesso não autorizado à sua conta;
 b) Perceber atividades suspeitas ou incomuns;
@@ -1123,7 +1123,7 @@ s) **Qualquer Outro Motivo:** Considerado necessário pela Everwin para proteç�
 24.2.1. O Cliente poderá solicitar o encerramento de sua conta:
 
 a) Através do dashboard ou portal;
-b) Enviando solicitação por e-mail para support@everwin.trade;
+b) Enviando solicitação por e-mail para support@everwin.capital;
 c) Contactando o suporte ao cliente.
 
 24.2.2. Antes do encerramento, o Cliente deverá:
@@ -1542,11 +1542,11 @@ Para esclarecimentos, solicitações, reclamações ou qualquer comunicação re
 
 | Finalidade | E-mail |
 |-----------|--------|
-| **Suporte Geral** | support@everwin.trade |
+| **Suporte Geral** | support@everwin.capital |
 | **Questões Jurídicas** | legal@everwin.trade |
 | **Compliance e AML** | compliance@everwin.trade |
 | **Privacidade de Dados** | privacy@everwin.trade |
-| **Encerramento de Conta** | support@everwin.trade |
+| **Encerramento de Conta** | support@everwin.capital |
 
 ### 37.2 Tempo de Resposta
 

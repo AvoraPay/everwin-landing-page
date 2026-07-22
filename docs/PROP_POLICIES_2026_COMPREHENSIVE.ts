@@ -194,7 +194,7 @@ export const PROP_POLICIES_2026 = {
           items: [
             "Everwin NÃO é responsável por perdas decorrentes de: (a) Credenciais comprometidas; (b) Falta de 2FA; (c) Software de spyware/keylogger no dispositivo do usuário.",
             "Usuário é responsável por manter seu dispositivo seguro, com antivírus atualizado e sistema operacional patchado.",
-            "Notificação de acesso suspeito deve ser feita IMEDIATAMENTE a support@everwin.trade.",
+            "Notificação de acesso suspeito deve ser feita IMEDIATAMENTE a support@everwin.capital.",
             "Everwin poderá, a seu exclusivo critério, ajustar saldo em caso de fraude interna comprovada, mas NÃO é obrigada a ressarcimento.",
           ],
         },

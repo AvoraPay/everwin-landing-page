@@ -34,7 +34,7 @@ export const config = {
   databaseSsl: (process.env.PROP_DATABASE_SSL ?? "true") !== "false",
   resendApiKey: process.env.RESEND_API_KEY ?? "",
   resendFrom: process.env.RESEND_FROM_EMAIL ?? "Everwin Prop <prop@everwin.trade>",
-  supportEmail: process.env.SUPPORT_EMAIL ?? "support@everwin.trade",
+  supportEmail: process.env.SUPPORT_EMAIL ?? "support@everwin.capital",
   stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
   reminderCron: process.env.PROP_REMINDER_CRON ?? "*/10 * * * *",

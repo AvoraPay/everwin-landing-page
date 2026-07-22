@@ -46,7 +46,7 @@ export default function CookiesPolicy() {
 
         <h3>4. Contact</h3>
         <p>
-          Questions about cookies: <strong>support@everwin.trade</strong>
+          Questions about cookies: <strong>support@everwin.capital</strong>
         </p>
       </LegalPageBody>
     </LegalPageShell>

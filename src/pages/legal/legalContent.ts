@@ -46,7 +46,7 @@ export type LegalPageSlug =
   | "prop-trading-restrictions"
   | "account-closure";
 
-const SUPPORT_EMAIL = "support@everwin.trade";
+const SUPPORT_EMAIL = "support@everwin.capital";
 
 const UPDATED_AT: Record<AppLanguage, string> = {
   pt: "23 de março de 2026",
@@ -1119,7 +1119,7 @@ function getPortuguesePages(): Record<LegalPageSlug, LegalPolicyPageContent> {
           items: [
             "Everwin NÃO é responsável por perdas decorrentes de: (a) Credenciais comprometidas; (b) Falta de 2FA; (c) Software de spyware/keylogger no dispositivo do usuário.",
             "Usuário é responsável por manter seu dispositivo seguro, com antivírus atualizado e sistema operacional patchado.",
-            "Notificação de acesso suspeito deve ser feita IMEDIATAMENTE a support@everwin.trade.",
+            "Notificação de acesso suspeito deve ser feita IMEDIATAMENTE a support@everwin.capital.",
             "Everwin poderá, a seu exclusivo critério, ajustar saldo em caso de fraude interna comprovada, mas NÃO é obrigada a ressarcimento.",
           ],
         },
@@ -1310,7 +1310,7 @@ function getPortuguesePages(): Record<LegalPageSlug, LegalPolicyPageContent> {
           title: "7. Encerramento por Iniciativa do Cliente",
           items: [
             "O Cliente poderá solicitar o encerramento de sua conta a qualquer momento.",
-            "A solicitação deverá ser realizada via dashboard ou e-mail para support@everwin.trade.",
+            "A solicitação deverá ser realizada via dashboard ou e-mail para support@everwin.capital.",
             "Antes do encerramento, o Cliente deverá realizar saque de eventuais saldos disponíveis.",
             "O Cliente deverá verificar se atende aos requisitos de elegibilidade para saque.",
             "O encerramento será processado dentro de prazo razoável após confirmação.",
@@ -2181,7 +2181,7 @@ function getEnglishPages(): Record<LegalPageSlug, LegalPolicyPageContent> {
           items: [
             "Everwin is NOT liable for losses resulting from: (a) Compromised credentials; (b) Lack of 2FA; (c) Spyware/keylogger software on user's device.",
             "User is responsible for keeping their device secure, with updated antivirus and patched operating system.",
-            "Suspicious access notification must be made IMMEDIATELY to support@everwin.trade.",
+            "Suspicious access notification must be made IMMEDIATELY to support@everwin.capital.",
             "Everwin may, at its sole discretion, adjust balance in case of proven internal fraud, but is NOT obligated to reimburse.",
           ],
         },
@@ -2372,7 +2372,7 @@ function getEnglishPages(): Record<LegalPageSlug, LegalPolicyPageContent> {
           title: "7. Closure by Client Initiative",
           items: [
             "The Client may request account closure at any time.",
-            "The request must be made via dashboard or email to support@everwin.trade.",
+            "The request must be made via dashboard or email to support@everwin.capital.",
             "Before closure, the Client must withdraw any available balances.",
             "The Client must verify they meet eligibility requirements for withdrawal.",
             "Closure will be processed within a reasonable period after confirmation.",
@@ -3243,7 +3243,7 @@ function getSpanishPages(): Record<LegalPageSlug, LegalPolicyPageContent> {
           items: [
             "Everwin NO es responsable por pérdidas resultantes de: (a) Credenciales comprometidas; (b) Falta de 2FA; (c) Software spyware/keylogger en dispositivo del usuario.",
             "Usuario es responsable de mantener su dispositivo seguro, con antivirus actualizado y sistema operativo parcheado.",
-            "Notificación de acceso sospechoso debe hacerse INMEDIATAMENTE a support@everwin.trade.",
+            "Notificación de acceso sospechoso debe hacerse INMEDIATAMENTE a support@everwin.capital.",
             "Everwin podrá, a su exclusivo criterio, ajustar saldo en caso de fraude interno comprobado, pero NO está obligada a reembolso.",
           ],
         },
@@ -3434,7 +3434,7 @@ function getSpanishPages(): Record<LegalPageSlug, LegalPolicyPageContent> {
           title: "7. Cierre por Iniciativa del Cliente",
           items: [
             "El Cliente podrá solicitar el cierre de su cuenta en cualquier momento.",
-            "La solicitud deberá realizarse a través del dashboard o correo electrónico a support@everwin.trade.",
+            "La solicitud deberá realizarse a través del dashboard o correo electrónico a support@everwin.capital.",
             "Antes del cierre, el Cliente deberá retirar eventuales saldos disponibles.",
             "El Cliente deberá verificar si cumple con los requisitos de elegibilidad para retiro.",
             "El cierre será procesado dentro de un plazo razonable tras la confirmación.",

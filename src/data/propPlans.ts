@@ -8,26 +8,11 @@ export type PropPlan = {
   paymentUrl: string;
 };
 
-const BASE = "https://everwin.capital";
-
-const NOVUS_RAW: Record<PropPlanKey, string> = {
+export const NOVUS_LINKS: Record<PropPlanKey, string> = {
   plan_1: "https://pay.novuspagamentos.com/link/prop-trading-testing-fee--7518d57d",
   plan_2: "https://pay.novuspagamentos.com/link/prop-trading-testing-fee-b2c78af5",
   plan_3: "https://pay.novuspagamentos.com/link/prop-trade-testing-fee-15b8e2db",
   plan_4: "https://pay.novuspagamentos.com/link/prop-trade-testing-fee-2efb525d",
-};
-
-const buildNovusLink = (raw: string, planKey: PropPlanKey): string => {
-  const successUrl = encodeURIComponent(`${BASE}/prop/thank-you?plan=${planKey}`);
-  const cancelUrl = encodeURIComponent(`${BASE}/prop/checkout?plan=${planKey}`);
-  return `${raw}?success_url=${successUrl}&cancel_url=${cancelUrl}`;
-};
-
-const NOVUS_LINKS: Record<PropPlanKey, string> = {
-  plan_1: buildNovusLink(NOVUS_RAW.plan_1, "plan_1"),
-  plan_2: buildNovusLink(NOVUS_RAW.plan_2, "plan_2"),
-  plan_3: buildNovusLink(NOVUS_RAW.plan_3, "plan_3"),
-  plan_4: buildNovusLink(NOVUS_RAW.plan_4, "plan_4"),
 };
 
 const BRL_PLANS: PropPlan[] = [

@@ -235,7 +235,7 @@ export default function PropSubmissionStatusPage() {
     ].filter((item) => item.value && item.value !== "-");
   }, [bundle, copy, i18n.language, lang]);
 
-  const hasCheckoutLink = Boolean(bundle?.payment?.checkoutUrl) && !bundle?.vacanciesLocked;
+  const hasCheckoutLink = Boolean(bundle?.payment?.checkoutUrl);
 
   return (
     <div className="min-h-screen bg-[linear-gradient(187deg,rgb(246,247,249)_-24%,rgb(224,227,235)_100%)] px-4 pb-24 pt-[112px] md:pt-[144px]">

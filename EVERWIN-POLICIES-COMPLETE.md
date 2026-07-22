@@ -1,7 +1,7 @@
 # Everwin - Todas as Políticas do Site
 
 > **Última atualização:** 23 de março de 2026
-> **E-mail de suporte:** support@everwin.trade
+> **E-mail de suporte:** support@everwin.capital
 
 ---
 
@@ -77,7 +77,7 @@ Quando aplicável, o tratamento poderá ocorrer com base na execução de contra
 - Adotamos medidas administrativas, técnicas e organizacionais razoáveis para reduzir risco de acesso não autorizado, perda, vazamento, alteração ou uso indevido.
 - Conforme a legislação aplicável, o titular poderá solicitar acesso, correção, atualização, anonimização, portabilidade, exclusão, revisão ou revogação de consentimento quando cabível.
 
-> Solicitações relacionadas à privacidade podem ser encaminhadas para support@everwin.trade. Em algumas hipóteses, a Everwin poderá solicitar confirmação adicional de identidade antes de atender a requisição.
+> Solicitações relacionadas à privacidade podem ser encaminhadas para support@everwin.capital. Em algumas hipóteses, a Everwin poderá solicitar confirmação adicional de identidade antes de atender a requisição.
 
 ---
 
@@ -120,7 +120,7 @@ Ao acessar ou utilizar qualquer ambiente operado pela Everwin, o usuário declar
 - Na máxima extensão permitida por lei, a Everwin não garante disponibilidade ininterrupta, ausência de erros, compatibilidade universal ou resultados específicos.
 - O uso contínuo após atualizações de políticas, fluxos, preços ou funcionalidades representa aceitação da versão vigente.
 
-> Dúvidas gerais podem ser encaminhadas para support@everwin.trade.
+> Dúvidas gerais podem ser encaminhadas para support@everwin.capital.
 
 ---
 
@@ -155,7 +155,7 @@ Cookies e tecnologias similares ajudam a manter funcionalidades essenciais do si
 
 ### 3.5 Atualizações e contato
 
-Esta política pode ser atualizada sempre que houver ajuste relevante em ferramentas, finalidades ou exigências legais. Para dúvidas, entre em contato com support@everwin.trade.
+Esta política pode ser atualizada sempre que houver ajuste relevante em ferramentas, finalidades ou exigências legais. Para dúvidas, entre em contato com support@everwin.capital.
 
 ---
 
@@ -193,7 +193,7 @@ Esta política se aplica aos pagamentos realizados em fluxos oficiais da Everwin
 
 ### 4.6 Contato
 
-Questões relacionadas a pagamento, conciliação ou cobrança podem ser enviadas para support@everwin.trade.
+Questões relacionadas a pagamento, conciliação ou cobrança podem ser enviadas para support@everwin.capital.
 
 ---
 
@@ -229,7 +229,7 @@ Esta política descreve regras gerais para saques ou devoluções processadas pe
 
 ### 5.6 Canal de suporte
 
-Para dúvidas operacionais sobre saques e elegibilidade, utilize support@everwin.trade.
+Para dúvidas operacionais sobre saques e elegibilidade, utilize support@everwin.capital.
 
 ---
 
@@ -662,7 +662,7 @@ Acesso e operação segura de conta Prop é responsabilidade exclusiva do usuár
 
 - Everwin NÃO é responsável por perdas decorrentes de: (a) Credenciais comprometidas; (b) Falta de 2FA; (c) Software de spyware/keylogger no dispositivo do usuário.
 - Usuário é responsável por manter seu dispositivo seguro, com antivírus atualizado e sistema operacional patchado.
-- Notificação de acesso suspeito deve ser feita IMEDIATAMENTE a support@everwin.trade.
+- Notificação de acesso suspeito deve ser feita IMEDIATAMENTE a support@everwin.capital.
 - Everwin poderá, a seu exclusivo critério, ajustar saldo em caso de fraude interna comprovada, mas NÃO é obrigada a ressarcimento.
 
 ---
@@ -747,4 +747,4 @@ A Everwin poderá revisar, complementar, consolidar ou atualizar esta política 
 
 ## Contato
 
-Para esclarecimentos, validações documentais, solicitações operacionais ou dúvidas sobre esta política, entre em contato pelo e-mail **support@everwin.trade**.
+Para esclarecimentos, validações documentais, solicitações operacionais ou dúvidas sobre esta política, entre em contato pelo e-mail **support@everwin.capital**.
