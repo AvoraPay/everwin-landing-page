@@ -3,7 +3,6 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
-  ExternalLink,
   Layers3,
   ShieldAlert,
   Target,
@@ -34,6 +33,7 @@ import {
   PortalStatusPill,
   PortalSurface,
 } from "../../portal-ui";
+import { AccountCredentialsCard } from "../components/AccountCredentialsCard";
 import { EdgeScoreDial } from "../components/charts/EdgeScoreDial";
 import { InteractiveLineChart } from "../components/charts/InteractiveLineChart";
 
@@ -240,26 +240,13 @@ export function ClientAccountsPage() {
 
           <div className="grid gap-4 xl:grid-cols-2">
             <PortalSection title="Acesso">
-              <PortalMetricList
-                items={[
-                  { label: "Login", value: selected.account.platformLogin || "-", hint: selected.account.platformEmail || "-" },
-                  { label: "Senha", value: selected.account.platformPassword ? "Disponível" : "-", hint: "Manter seguro" },
-                  { label: "Broker", value: selected.account.brokerName || "-", hint: selected.account.platformName || "-" },
-                  { label: "Trade Room", value: selected.account.tradeRoomUrl ? "Configurado" : "Padrão", hint: selected.account.tradeRoomUrl || "https://app.everwin.capital/pt/auth/login" },
-                ]}
-                columns={2}
+              <AccountCredentialsCard
+                platformLogin={selected.account.platformLogin || "-"}
+                platformPassword={selected.account.platformPassword || ""}
+                platformName={selected.account.platformName}
+                brokerName={selected.account.brokerName}
+                tradeRoomUrl={selected.account.tradeRoomUrl}
               />
-              <div className="mt-4">
-                <a
-                  href={selected.account.tradeRoomUrl || "https://app.everwin.capital/pt/auth/login"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex h-10 items-center gap-2 rounded-lg bg-emerald-600 dark:bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-500 dark:hover:bg-emerald-500"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  Trade Room
-                </a>
-              </div>
             </PortalSection>
 
             <PortalSection title="Risco">

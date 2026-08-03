@@ -47,6 +47,7 @@ import {
   buildPortalEmail,
   createOtpCode,
   createShortCode,
+  createSubmissionCodeFromDocument,
   createTempPassword,
   normalizeCpf,
   normalizeEmail,
@@ -96,11 +97,6 @@ async function ensureDb() {
     });
   return _dbInitPromise;
 }
-
-app.use(async (_req, _res, next) => {
-  await ensureDb();
-  next();
-});
 
 app.post("/api/webhooks/stripe", express.raw({ type: "application/json" }), async (req, res) => {
   if (!isStripeEnabled() || !config.stripeWebhookSecret) {
@@ -171,7 +167,8 @@ app.use(cors(
             callback(null, true);
             return;
           }
-          callback(new Error("Origin not allowed by CORS."));
+          // Reject without throwing — avoids 500 on OPTIONS preflight
+          callback(null, false);
         },
         credentials: true,
       }
@@ -182,6 +179,18 @@ app.use(cors(
 ));
 app.use(express.json({ limit: "1mb" }));
 app.use(morgan("dev"));
+
+// ensureDb AFTER cors/helmet so OPTIONS preflight never fails with 500
+app.use(async (_req, _res, next) => {
+  if (_req.method === "OPTIONS") return next();
+  try {
+    await ensureDb();
+  } catch {}
+  if (app.locals.bootError) {
+    return _res.status(503).json({ message: "Service temporarily unavailable. Database is initializing." });
+  }
+  next();
+});
 
 const loginLimiter = rateLimit({ windowMs: 60_000, max: 5, standardHeaders: true, legacyHeaders: false, message: { message: "Too many login attempts. Try again in 1 minute." } });
 const submissionLimiter = rateLimit({ windowMs: 60_000, max: 3, standardHeaders: true, legacyHeaders: false, message: { message: "Too many submissions. Try again in 1 minute." } });
@@ -246,6 +255,41 @@ function mapPublicPlanId(planKey, locale) {
   return map[planKey] ?? map.plan_2;
 }
 
+/**
+ * Checkout links by public plan key (Novus Pagamentos).
+ * Shared between BRL and USD plans — the plan key defines the product,
+ * the locale defines the price table shown on the landing page.
+ */
+const PLAN_CHECKOUT_LINKS = {
+  plan_1: "https://pay.novuspagamentos.com/link/prop-trading-testing-fee--7518d57d",
+  plan_2: "https://pay.novuspagamentos.com/link/prop-trading-testing-fee-b2c78af5",
+  plan_3: "https://pay.novuspagamentos.com/link/prop-trade-testing-fee-15b8e2db",
+  plan_4: "https://pay.novuspagamentos.com/link/prop-trade-testing-fee-2efb525d",
+};
+
+const PLAN_ID_TO_PUBLIC_KEY = {
+  plan_brl_25k: "plan_1",
+  plan_usd_12k: "plan_1",
+  plan_brl_50k: "plan_2",
+  plan_usd_25k: "plan_2",
+  plan_brl_100k: "plan_3",
+  plan_usd_50k: "plan_3",
+  plan_brl_150k: "plan_4",
+  plan_usd_75k: "plan_4",
+};
+
+function resolveCheckoutUrl(planId, submissionCode) {
+  const publicKey = PLAN_ID_TO_PUBLIC_KEY[planId];
+  const base = config.defaultCheckoutBaseUrl || (publicKey ? PLAN_CHECKOUT_LINKS[publicKey] : "");
+  if (!base) return "";
+  if (!submissionCode) return base;
+
+  const successUrl = `${config.appBaseUrl}/prop/thank-you?id=${submissionCode}`;
+  const cancelUrl = `${config.appBaseUrl}/prop/submission?id=${submissionCode}`;
+  const separator = base.includes("?") ? "&" : "?";
+  return `${base}${separator}success_url=${encodeURIComponent(successUrl)}&cancel_url=${encodeURIComponent(cancelUrl)}`;
+}
+
 function buildStatusUrl(submissionCode) {
   return `${config.appBaseUrl}/prop/submission?id=${submissionCode}`;
 }
@@ -273,8 +317,8 @@ async function getSystemSettingValue(key) {
 
 async function areVacanciesLocked() {
   const value = (await getSystemSettingValue("prop_vacancies_locked")).toLowerCase();
-  if (!value) return true;
-  return value !== "false";
+  if (!value) return false;
+  return value === "true";
 }
 
 async function getVacanciesMessage() {
@@ -924,6 +968,12 @@ app.post("/api/public/submissions", submissionLimiter, async (req, res) => {
   const parsed = createSubmissionSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ message: "Invalid payload." });
 
+  // Vacancies locked = intake closed. Payment is automatic when open, so there is
+  // no waitlist to fall back to — refuse the application instead of parking it.
+  if (await areVacanciesLocked()) {
+    return res.status(423).json({ message: await getVacanciesMessage(), vacanciesLocked: true });
+  }
+
   const locale = normalizeLocale(parsed.data.locale);
   const normalizedEmail = normalizeEmail(parsed.data.email);
   const normalizedName = normalizeName(`${parsed.data.firstName} ${parsed.data.lastName}`);
@@ -970,11 +1020,12 @@ app.post("/api/public/submissions", submissionLimiter, async (req, res) => {
 
   const applicationId = uid("application");
   const paymentId = uid("payment");
-  const submissionCode = createShortCode("sub_");
+  const submissionCode = createSubmissionCodeFromDocument(normalizedDocumentNumber, parsed.data.country);
   const paymentCode = createShortCode("pay_");
   const submittedAt = nowISO();
   const paymentDueAt = addHours(submittedAt, 1);
   const paymentProvider = "manual_link";
+  const checkoutUrl = resolveCheckoutUrl(plan.id, submissionCode);
 
   const applicationRow = await withTransaction(async (trx) => {
     await trx.query(
@@ -991,7 +1042,7 @@ app.post("/api/public/submissions", submissionLimiter, async (req, res) => {
           $8,$9,$10,$11,$12,$13,$14,$15,$16,
           $17,$18,$19,$20,$21,
           $22,$23,$24,
-          $25,$26,$27,'submitted','pending',
+          $25,$26,$27,$32,'pending',
           $28,$29,$30,$31
         )
       `,
@@ -1027,6 +1078,7 @@ app.post("/api/public/submissions", submissionLimiter, async (req, res) => {
         submittedAt,
         submittedAt,
         submittedAt,
+        checkoutUrl ? "payment_pending" : "submitted",
       ],
     );
 
@@ -1044,7 +1096,7 @@ app.post("/api/public/submissions", submissionLimiter, async (req, res) => {
         plan.fee,
         plan.currency,
         paymentDueAt,
-        null,
+        checkoutUrl || null,
         submittedAt,
         submittedAt,
       ],
@@ -1056,19 +1108,32 @@ app.post("/api/public/submissions", submissionLimiter, async (req, res) => {
   const application = mapApplicationRow(applicationRow);
   const payment = await getPaymentByApplicationId(application.id);
 
-  // Waitlist mode: do NOT create Stripe session or redirect to payment.
-  // Payment link will be released manually by admin via /release-payment endpoint.
-
-  const subject =
-    locale === "en"
+  // Automatic payment mode: the plan checkout link is issued with the application,
+  // so the candidate can pay immediately. If no link is configured for the plan the
+  // application falls back to manual release by an admin.
+  const subject = checkoutUrl
+    ? locale === "en"
+      ? `Everwin Prop — complete your payment • ${application.submissionCode}`
+      : locale === "es"
+        ? `Everwin Prop — complete su pago • ${application.submissionCode}`
+        : `Everwin Prop — finalize seu pagamento • ${application.submissionCode}`
+    : locale === "en"
       ? `Everwin Prop — application received • ${application.submissionCode}`
       : locale === "es"
         ? `Everwin Prop — solicitud recibida • ${application.submissionCode}`
         : `Everwin Prop — inscrição recebida • ${application.submissionCode}`;
 
   await sendAndLogEmailBestEffort(
-    "submission.waitlist",
-    () => sendWaitlistConfirmationEmail({ application, plan, statusUrl: buildStatusUrl(application.submissionCode) }),
+    checkoutUrl ? "payment.link.released" : "submission.waitlist",
+    () =>
+      checkoutUrl
+        ? sendPaymentLinkReleasedEmail({
+            application,
+            plan,
+            checkoutUrl,
+            statusUrl: buildStatusUrl(application.submissionCode),
+          })
+        : sendWaitlistConfirmationEmail({ application, plan, statusUrl: buildStatusUrl(application.submissionCode) }),
     {
       applicationId: application.id,
       recipient: application.email,
@@ -1079,7 +1144,7 @@ app.post("/api/public/submissions", submissionLimiter, async (req, res) => {
   await audit(null, "CREATE_SUBMISSION", "application", application.id, {
     submissionCode: application.submissionCode,
     planId: application.planId,
-    waitlist: true,
+    checkoutIssued: Boolean(checkoutUrl),
   });
 
   return res.status(201).json({
@@ -1102,13 +1167,19 @@ app.get("/api/public/submissions/:code", async (req, res) => {
     platformLogin: platformLogin ? `${platformLogin.slice(0, 3)}***` : undefined,
   }));
 
-  const safePayment =
-    vacanciesLocked && bundle.application.paymentStatus !== "approved" && bundle.payment
-      ? {
-          ...bundle.payment,
-          checkoutUrl: undefined,
-        }
-      : bundle.payment;
+  // The checkout link belongs to the candidate once the application exists.
+  // Vacancy state gates NEW intake, never an already-issued payment link.
+  const safePayment = bundle.payment
+    ? {
+        ...bundle.payment,
+        checkoutUrl:
+          bundle.application.paymentStatus === "approved"
+            ? undefined
+            : bundle.payment.checkoutUrl ||
+              resolveCheckoutUrl(bundle.application.planId, bundle.application.submissionCode) ||
+              undefined,
+      }
+    : bundle.payment;
 
   return res.json({
     ...bundle,
@@ -1459,6 +1530,8 @@ app.get("/api/submissions", requireAuth, requireRole("admin"), async (_req, res)
       paymentCode: row.payment_code,
       status: row.payment_row_status,
       checkoutUrl: row.checkout_url,
+      // Suggested link for the plan, so the admin never has to paste one by hand.
+      defaultCheckoutUrl: resolveCheckoutUrl(row.plan_id, row.submission_code),
       provider: row.provider,
       dueAt: row.due_at,
       approvedAt: row.approved_at,
@@ -1718,7 +1791,9 @@ app.get("/api/accounts", requireAuth, async (req, res) => {
   if (req.authUser.role === "admin") {
     return res.json({ accounts: await getAccounts({ includeSecrets: true }) });
   }
-  return res.json({ accounts: await getAccounts({ userId: req.authUser.id, includeSecrets: false }) });
+  // Owners see their own platform credentials — the query is already scoped to
+  // their user id, so no other trader's secret can be reached from here.
+  return res.json({ accounts: await getAccounts({ userId: req.authUser.id, includeSecrets: true }) });
 });
 
 app.post("/api/accounts", requireAuth, requireRole("admin"), async (req, res) => {

@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Navigate, useLocation, useNavigate, Link } from "react-router-dom";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
+import { AnnouncementBar } from "../../../components/AnnouncementBar";
 import { Navbar } from "../../../components/Navbar";
 import { Footer } from "../../../sections/Footer";
 import { DisclaimerBanner } from "../../../components/DisclaimerBanner";
@@ -43,7 +44,8 @@ export function PropLoginPage() {
   };
 
   return (
-    <div className="bg-neutral-100 text-black font-sans_serif">
+    <div className="min-h-screen bg-[linear-gradient(187deg,rgb(246,247,249)_-24%,rgb(224,227,235)_100%)] text-black font-sans_serif">
+      <AnnouncementBar />
       <Navbar />
       <DisclaimerBanner />
 

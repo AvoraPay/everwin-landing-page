@@ -43,13 +43,13 @@ export const AnnouncementBar = () => {
       </div>
 
       {/* Fixed CTA button */}
-      <a
-        href="https://www.everwin.capital/prop"
+      <Link
+        to="/prop"
         onClick={close}
         className="flex shrink-0 items-center bg-emerald-700/60 px-4 text-xs font-semibold text-white transition hover:bg-emerald-700 font-bricolage_grotesque z-[2]"
       >
         {cta}
-      </a>
+      </Link>
 
       {/* Close button */}
       <button

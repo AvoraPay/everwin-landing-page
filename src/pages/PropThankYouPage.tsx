@@ -27,11 +27,14 @@ function formatDate(value: string | undefined, language: string) {
 
 const COPY = {
   pt: {
-    badge: "Compra Aprovada",
+    badge: "Pagamento Enviado",
+    badgeApproved: "Pagamento Confirmado",
     loading: "Carregando dados da sua compra...",
     notFound: "Nao encontramos os dados dessa compra. Se voce acabou de pagar, aguarde alguns instantes e recarregue a pagina.",
-    title: "Obrigado pela sua compra!",
-    subtitle: "Seu pagamento foi recebido. Acompanhe abaixo o status da sua inscricao e proximos passos.",
+    title: "Estamos confirmando seu pagamento",
+    titleApproved: "Pagamento confirmado!",
+    subtitle: "Assim que a confirmacao do provedor cair, liberamos sua conta de avaliacao e enviamos os acessos por e-mail. Acompanhe por aqui.",
+    subtitleApproved: "Seu pagamento foi confirmado. Sua conta de avaliacao esta sendo liberada e os acessos chegam por e-mail.",
     submissionCode: "Codigo da inscricao",
     paymentStatus: "Status do pagamento",
     paymentPending: "Processando pagamento",
@@ -55,6 +58,7 @@ const COPY = {
     goLogin: "Ir para o login",
     goTracking: "Acompanhar inscricao",
     saveCode: "Salve este codigo! Use-o em qualquer contato com o time Everwin.",
+    saveCodeHint: "Voce pode acessar esta pagina a qualquer momento usando este codigo.",
     accountArea: "Contas vinculadas",
     noAccounts: "Sua conta operacional ainda nao foi vinculada. Assim que ativarmos, voce recebera um e-mail.",
     accountId: "Account ID",
@@ -65,11 +69,14 @@ const COPY = {
     legal: "Atencao: submissoes duplicadas nao geram nova compra. Se voce ja possui esse codigo, continue acompanhando por aqui.",
   },
   en: {
-    badge: "Purchase Approved",
+    badge: "Payment Submitted",
+    badgeApproved: "Payment Confirmed",
     loading: "Loading your purchase details...",
     notFound: "We could not find your purchase data. If you just paid, wait a few moments and reload.",
-    title: "Thank you for your purchase!",
-    subtitle: "Your payment has been received. Track your submission status and next steps below.",
+    title: "We are confirming your payment",
+    titleApproved: "Payment confirmed!",
+    subtitle: "As soon as the provider confirms it, we release your evaluation account and send your access by email. Track it here.",
+    subtitleApproved: "Your payment is confirmed. Your evaluation account is being released and access details arrive by email.",
     submissionCode: "Submission code",
     paymentStatus: "Payment status",
     paymentPending: "Processing payment",
@@ -93,6 +100,7 @@ const COPY = {
     goLogin: "Go to login",
     goTracking: "Track submission",
     saveCode: "Save this code! Use it in any contact with the Everwin team.",
+    saveCodeHint: "You can access this page at any time using this code.",
     accountArea: "Linked accounts",
     noAccounts: "Your operational account has not been linked yet. You will receive an email once it is activated.",
     accountId: "Account ID",
@@ -103,11 +111,14 @@ const COPY = {
     legal: "Important: duplicate submissions do not create a new purchase. If you already have this code, keep tracking from here.",
   },
   es: {
-    badge: "Compra Aprobada",
+    badge: "Pago Enviado",
+    badgeApproved: "Pago Confirmado",
     loading: "Cargando datos de su compra...",
     notFound: "No encontramos los datos de esta compra. Si acaba de pagar, espere unos instantes y recargue.",
-    title: "Gracias por su compra!",
-    subtitle: "Su pago fue recibido. Acompane abajo el estado de su solicitud y proximos pasos.",
+    title: "Estamos confirmando su pago",
+    titleApproved: "Pago confirmado!",
+    subtitle: "En cuanto el proveedor confirme, liberamos su cuenta de evaluacion y enviamos los accesos por correo. Acompane aqui.",
+    subtitleApproved: "Su pago fue confirmado. Su cuenta de evaluacion esta siendo liberada y los accesos llegan por correo.",
     submissionCode: "Codigo de solicitud",
     paymentStatus: "Estado del pago",
     paymentPending: "Procesando pago",
@@ -131,6 +142,7 @@ const COPY = {
     goLogin: "Ir al login",
     goTracking: "Seguir solicitud",
     saveCode: "Guarde este codigo! Uselo en cualquier contacto con el equipo Everwin.",
+    saveCodeHint: "Puede acceder a esta pagina en cualquier momento con este codigo.",
     accountArea: "Cuentas vinculadas",
     noAccounts: "Su cuenta operativa aun no fue vinculada. En cuanto la activemos, recibira un correo.",
     accountId: "Account ID",
@@ -233,6 +245,8 @@ export default function PropThankYouPage() {
     ].filter((item) => item.value && item.value !== "-");
   }, [bundle, copy, i18n.language, lang]);
 
+  const isApproved = bundle?.application.paymentStatus === "approved";
+
   const paymentLabel =
     bundle?.application.paymentStatus === "approved"
       ? copy.paymentApproved
@@ -248,7 +262,7 @@ export default function PropThankYouPage() {
         : "sky";
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(187deg,rgb(246,247,249)_-24%,rgb(224,227,235)_100%)] px-4 pb-24 pt-[112px] md:pt-[144px]">
+    <div className="min-h-screen bg-[linear-gradient(187deg,rgb(246,247,249)_-24%,rgb(224,227,235)_100%)] px-4 pb-24 pt-[120px] md:pt-[150px]">
       <div
         className="pointer-events-none fixed inset-0 opacity-[0.05]"
         style={{
@@ -262,16 +276,16 @@ export default function PropThankYouPage() {
         <Reveal>
           <div className="mb-10 text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              <span className={`h-2 w-2 rounded-full bg-emerald-500 ${isApproved ? "" : "animate-pulse"}`} />
               <span className="font-bricolage_grotesque text-xs font-semibold uppercase tracking-[0.12em] text-emerald-600">
-                {copy.badge}
+                {isApproved ? copy.badgeApproved : copy.badge}
               </span>
             </div>
-            <h1 className="mt-4 font-bricolage_grotesque text-[36px] font-bold leading-[1.04] tracking-[-0.03em] text-slate-900 md:text-[58px]">
-              {copy.title}
+            <h1 className="mt-4 font-bricolage_grotesque text-[36px] font-bold leading-[1.04] tracking-[-0.03em] text-gray-800 md:text-[58px]">
+              {isApproved ? copy.titleApproved : copy.title}
             </h1>
-            <p className="mx-auto mt-3 max-w-[760px] font-bricolage_grotesque text-base leading-7 text-slate-500">
-              {copy.subtitle}
+            <p className="mx-auto mt-3 max-w-[760px] font-bricolage_grotesque text-base leading-7 text-gray-500">
+              {isApproved ? copy.subtitleApproved : copy.subtitle}
             </p>
           </div>
         </Reveal>
@@ -298,7 +312,7 @@ export default function PropThankYouPage() {
             <div className="space-y-6">
               {/* Submission code + payment status */}
               <Reveal delay={60}>
-                <section className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
+                <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                       <p className="font-bricolage_grotesque text-xs uppercase tracking-[0.16em] text-slate-500">
@@ -313,13 +327,23 @@ export default function PropThankYouPage() {
                     </div>
                   </div>
 
-                  <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="font-bricolage_grotesque text-xs text-slate-500">{copy.saveCode}</p>
+                  <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                    <div className="flex items-start gap-3">
+                      <svg className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+                        <path d="M12 8v4" />
+                        <path d="M12 16h.01" />
+                      </svg>
+                      <div>
+                        <p className="font-bricolage_grotesque text-sm font-semibold text-amber-800">{copy.saveCode}</p>
+                        <p className="mt-1 font-bricolage_grotesque text-xs text-amber-700">{copy.saveCodeHint}</p>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Payment status card */}
                   <div
-                    className={`mt-6 rounded-[24px] border p-5 ${
+                    className={`mt-6 rounded-xl border p-5 ${
                       paymentColor === "emerald"
                         ? "border-emerald-500/20 bg-[linear-gradient(180deg,rgba(16,185,129,0.14)_0%,rgba(16,185,129,0.06)_100%)]"
                         : paymentColor === "amber"
@@ -347,7 +371,7 @@ export default function PropThankYouPage() {
 
                   {/* Portal access ready */}
                   {bundle.canAccessPortal && (
-                    <div className="mt-6 rounded-[24px] border border-sky-400/20 bg-sky-50 p-5">
+                    <div className="mt-6 rounded-xl border border-sky-400/20 bg-sky-50 p-5">
                       <p className="font-bricolage_grotesque text-xl font-bold text-slate-900">{copy.accessReady}</p>
                       <p className="mt-2 font-bricolage_grotesque text-sm leading-6 text-slate-600">
                         {copy.accessReadyDesc}
@@ -372,7 +396,7 @@ export default function PropThankYouPage() {
 
               {/* Linked accounts */}
               <Reveal delay={120}>
-                <section className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
+                <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
                   <h2 className="mb-5 font-bricolage_grotesque text-2xl font-bold text-slate-900">
                     {copy.accountArea}
                   </h2>
@@ -420,7 +444,7 @@ export default function PropThankYouPage() {
             <div className="space-y-6">
               {/* Summary */}
               <Reveal delay={90}>
-                <section className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
+                <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
                   <h2 className="font-bricolage_grotesque text-2xl font-bold text-slate-900">{copy.summary}</h2>
                   <div className="mt-5 space-y-4 font-bricolage_grotesque text-sm text-slate-700">
                     <SummaryRow label={copy.plan} value={bundle.plan?.name ?? bundle.application.planId} />
@@ -444,7 +468,7 @@ export default function PropThankYouPage() {
 
               {/* Next steps */}
               <Reveal delay={130}>
-                <section className="rounded-[30px] border border-emerald-500/15 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
+                <section className="rounded-2xl border border-emerald-500/15 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
                   <h2 className="font-bricolage_grotesque text-2xl font-bold text-slate-900">{copy.nextSteps}</h2>
                   <div className="mt-5 space-y-4">
                     {[copy.nextStep1, copy.nextStep2, copy.nextStep3].map((step) => (
@@ -467,7 +491,7 @@ export default function PropThankYouPage() {
 
               {/* Timeline */}
               <Reveal delay={160}>
-                <section className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
+                <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
                   <h2 className="font-bricolage_grotesque text-2xl font-bold text-slate-900">{copy.timeline}</h2>
                   <div className="mt-5 space-y-4">
                     {timelineItems.map((item) => (
@@ -485,7 +509,7 @@ export default function PropThankYouPage() {
 
               {/* Legal */}
               <Reveal delay={190}>
-                <section className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
+                <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
                   <p className="font-bricolage_grotesque text-sm leading-6 text-slate-600">{copy.legal}</p>
                 </section>
               </Reveal>

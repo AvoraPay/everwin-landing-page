@@ -81,7 +81,7 @@ export function AdminSettingsPage() {
   const [stored, setStored] = useState<Record<string, SystemSetting>>({});
   const [bearer, setBearer] = useState("");
   const [webhookSecret, setWebhookSecret] = useState("");
-  const [vacanciesLocked, setVacanciesLocked] = useState(true);
+  const [vacanciesLocked, setVacanciesLocked] = useState(false);
   const [vacanciesMessage, setVacanciesMessage] = useState(DEFAULT_VACANCIES_MESSAGE);
   const [loading, setLoading] = useState(true);
   const [savingApi, setSavingApi] = useState(false);
@@ -95,7 +95,7 @@ export function AdminSettingsPage() {
     fetchSettingsApi()
       .then((s) => {
         setStored(s);
-        setVacanciesLocked((s.prop_vacancies_locked?.preview ?? "true").toLowerCase() !== "false");
+        setVacanciesLocked((s.prop_vacancies_locked?.preview ?? "false").toLowerCase() === "true");
         setVacanciesMessage(s.prop_vacancies_message?.preview || DEFAULT_VACANCIES_MESSAGE);
       })
       .catch(() => {})
@@ -105,7 +105,7 @@ export function AdminSettingsPage() {
   const refreshStored = async () => {
     const r = await fetchSettingsApi();
     setStored(r);
-    setVacanciesLocked((r.prop_vacancies_locked?.preview ?? "true").toLowerCase() !== "false");
+    setVacanciesLocked((r.prop_vacancies_locked?.preview ?? "false").toLowerCase() === "true");
     setVacanciesMessage(r.prop_vacancies_message?.preview || DEFAULT_VACANCIES_MESSAGE);
     return r;
   };
@@ -137,7 +137,7 @@ export function AdminSettingsPage() {
   const handleTestWebhook = async () => {
     setTestingWebhook(true); setWebhookResult(null);
     try {
-      const res = await fetch("/prop/api/deposit", { method: "POST", headers: { "Content-Type": "application/json", "X-Webhook-Secret": "test-ping" }, body: JSON.stringify({ event: "ping", timestamp: new Date().toISOString() }) });
+      const res = await fetch("/api/webhooks/deposit", { method: "POST", headers: { "Content-Type": "application/json", "X-Webhook-Secret": "test-ping" }, body: JSON.stringify({ event: "ping", timestamp: new Date().toISOString() }) });
       setWebhookResult(res.ok ? { ok: true, message: `Endpoint acessível (${res.status})` } : { ok: false, message: `Endpoint retornou ${res.status}` });
     } catch (err) { setWebhookResult({ ok: false, message: err instanceof Error ? err.message : "Falha na conexão." }); }
     finally { setTestingWebhook(false); }
@@ -199,7 +199,7 @@ export function AdminSettingsPage() {
                 <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-white/40">Configure na corretora</p>
                 <p className="mb-3 text-xs text-slate-500 dark:text-white/40">Copie estes valores e cole no painel da Everwin Trade.</p>
                 <div className="space-y-3">
-                  <CopyBlock label="URL do Endpoint" value="https://everwin.trade/prop/api/deposit" />
+                  <CopyBlock label="URL do Endpoint" value="https://www.everwin.capital/api/webhooks/deposit" />
                   <CopyBlock label="Método" value="POST" />
                   <CopyBlock label="Header de Autenticação" value="X-Webhook-Secret: {seu-segredo}" />
                 </div>

@@ -238,7 +238,7 @@ export default function PropSubmissionStatusPage() {
   const hasCheckoutLink = Boolean(bundle?.payment?.checkoutUrl);
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(187deg,rgb(246,247,249)_-24%,rgb(224,227,235)_100%)] px-4 pb-24 pt-[112px] md:pt-[144px]">
+    <div className="min-h-screen bg-[linear-gradient(187deg,rgb(246,247,249)_-24%,rgb(224,227,235)_100%)] px-4 pb-24 pt-[120px] md:pt-[150px]">
       <div className="pointer-events-none fixed inset-0 opacity-[0.05]" style={{ backgroundImage: "linear-gradient(rgba(15,23,42,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,.08) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
 
       <div className="relative z-[1] mx-auto max-w-[1120px]">
@@ -248,10 +248,10 @@ export default function PropSubmissionStatusPage() {
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
               <span className="font-bricolage_grotesque text-xs font-semibold uppercase tracking-[0.12em] text-emerald-600">{copy.badge}</span>
             </div>
-            <h1 className="mt-4 font-bricolage_grotesque text-[36px] font-bold leading-[1.04] tracking-[-0.03em] text-slate-900 md:text-[58px]">
+            <h1 className="mt-4 font-bricolage_grotesque text-[36px] font-bold leading-[1.04] tracking-[-0.03em] text-gray-800 md:text-[58px]">
               {copy.title}
             </h1>
-            <p className="mx-auto mt-3 max-w-[760px] font-bricolage_grotesque text-base leading-7 text-slate-500">
+            <p className="mx-auto mt-3 max-w-[760px] font-bricolage_grotesque text-base leading-7 text-gray-500">
               {copy.subtitle}
             </p>
           </div>
@@ -276,7 +276,7 @@ export default function PropSubmissionStatusPage() {
           <div className="grid grid-cols-1 gap-7 lg:grid-cols-[1.15fr_0.85fr]">
             <div className="space-y-6">
               <Reveal delay={60}>
-                <section className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
+                <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
                       <p className="font-bricolage_grotesque text-xs uppercase tracking-[0.16em] text-slate-500">{copy.submissionCode}</p>
@@ -290,13 +290,13 @@ export default function PropSubmissionStatusPage() {
                   <ProgressStepper status={bundle.application.status} language={lang} />
 
                   {bundle.application.status === "submitted" ? (
-                    <div className="mt-6 rounded-[24px] border border-amber-400/25 bg-[linear-gradient(180deg,rgba(234,179,8,0.14)_0%,rgba(234,179,8,0.06)_100%)] p-5">
+                    <div className="mt-6 rounded-xl border border-amber-400/25 bg-[linear-gradient(180deg,rgba(234,179,8,0.14)_0%,rgba(234,179,8,0.06)_100%)] p-5">
                       <p className="font-bricolage_grotesque text-xs uppercase tracking-[0.14em] text-amber-700">{copy.waitlistTitle}</p>
                       <p className="mt-2 font-bricolage_grotesque text-lg font-bold text-slate-900">{copy.waitlistDesc}</p>
                       <p className="mt-3 font-bricolage_grotesque text-sm leading-6 text-slate-600">{copy.waitlistHint}</p>
                     </div>
                   ) : (
-                    <div className="mt-6 rounded-[24px] border border-emerald-500/20 bg-[linear-gradient(180deg,rgba(16,185,129,0.14)_0%,rgba(16,185,129,0.06)_100%)] p-5">
+                    <div className="mt-6 rounded-xl border border-emerald-500/20 bg-[linear-gradient(180deg,rgba(16,185,129,0.14)_0%,rgba(16,185,129,0.06)_100%)] p-5">
                       <p className="font-bricolage_grotesque text-xs uppercase tracking-[0.14em] text-emerald-700">{copy.paymentCard}</p>
                       <p className="mt-2 font-bricolage_grotesque text-2xl font-bold text-slate-900">
                         {bundle.application.paymentStatus === "approved"
@@ -336,7 +336,7 @@ export default function PropSubmissionStatusPage() {
                   )}
 
                   {bundle.canAccessPortal ? (
-                    <div className="mt-6 rounded-[24px] border border-sky-400/20 bg-sky-50 p-5">
+                    <div className="mt-6 rounded-xl border border-sky-400/20 bg-sky-50 p-5">
                       <p className="font-bricolage_grotesque text-xl font-bold text-slate-900">{copy.accessReady}</p>
                       <p className="mt-2 font-bricolage_grotesque text-sm leading-6 text-slate-600">{copy.accessReadyDesc}</p>
                       <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -358,7 +358,7 @@ export default function PropSubmissionStatusPage() {
               </Reveal>
 
               <Reveal delay={120}>
-                <section className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
+                <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
                   <div className="mb-5 flex items-center justify-between gap-3">
                     <h2 className="font-bricolage_grotesque text-2xl font-bold text-slate-900">{copy.accountArea}</h2>
                   </div>
@@ -394,7 +394,7 @@ export default function PropSubmissionStatusPage() {
 
             <div className="space-y-6">
               <Reveal delay={90}>
-                <section className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
+                <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
                   <h2 className="font-bricolage_grotesque text-2xl font-bold text-slate-900">{copy.summary}</h2>
                   <div className="mt-5 space-y-4 font-bricolage_grotesque text-sm text-slate-700">
                     <SummaryRow label={copy.plan} value={bundle.plan?.name ?? bundle.application.planId} />
@@ -411,7 +411,7 @@ export default function PropSubmissionStatusPage() {
               </Reveal>
 
               <Reveal delay={140}>
-                <section className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
+                <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
                   <h2 className="font-bricolage_grotesque text-2xl font-bold text-slate-900">{copy.timeline}</h2>
                   <div className="mt-5 space-y-4">
                     {timelineItems.map((item) => (
@@ -428,7 +428,7 @@ export default function PropSubmissionStatusPage() {
               </Reveal>
 
               <Reveal delay={180}>
-                <section className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
+                <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
                   <p className="font-bricolage_grotesque text-sm leading-6 text-slate-600">{copy.legal}</p>
                 </section>
               </Reveal>

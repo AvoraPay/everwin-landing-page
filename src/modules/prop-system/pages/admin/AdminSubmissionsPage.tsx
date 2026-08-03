@@ -51,9 +51,6 @@ import {
 } from "../../portal-ui";
 import type { AdminSubmissionListItem } from "../../types";
 
-const DEFAULT_VACANCIES_MESSAGE =
-  "Vagas temporariamente fechadas. As inscrições continuam em análise e os links serão enviados manualmente quando houver liberação.";
-
 type FilterKey = "all" | "finance" | "provision" | "access" | "account";
 type BatchAction = "review" | "approve" | "reject";
 
@@ -78,6 +75,7 @@ export function AdminSubmissionsPage() {
   const [platformLoading, setPlatformLoading] = useState(false);
   const [resetResult, setResetResult] = useState<string | null>(null);
   const [batchConfirm, setBatchConfirm] = useState<BatchAction | null>(null);
+  const [vacanciesLocked, setVacanciesLocked] = useState(false);
 
   const deferredQuery = useDeferredValue(query);
 
@@ -104,7 +102,7 @@ export function AdminSubmissionsPage() {
   const loadIntakeSettings = async () => {
     try {
       const settings = await fetchSettingsApi();
-      void settings;
+      setVacanciesLocked((settings.prop_vacancies_locked?.preview ?? "false").toLowerCase() === "true");
     } catch {
       // Keep defaults when settings are unavailable.
     }
@@ -121,7 +119,8 @@ export function AdminSubmissionsPage() {
   );
 
   useEffect(() => {
-    setCheckoutUrl(selectedItem?.payment?.checkoutUrl ?? "");
+    // Saved link wins; otherwise offer the plan default so the field is never empty.
+    setCheckoutUrl(selectedItem?.payment?.checkoutUrl || selectedItem?.payment?.defaultCheckoutUrl || "");
     setAdminNotes(selectedItem?.application.adminNotes ?? "");
     setPlatformData(null);
     setResetResult(null);
@@ -277,6 +276,9 @@ export function AdminSubmissionsPage() {
         }
         meta={
           <>
+            <PortalStatusPill tone={vacanciesLocked ? "danger" : "success"}>
+              {vacanciesLocked ? "Vagas trancadas — novas inscrições bloqueadas" : "Vagas abertas"}
+            </PortalStatusPill>
             <PortalStatusPill tone="warning">Abertos: {summary.finance}</PortalStatusPill>
             <PortalStatusPill tone="info">Aguardando: {summary.provision}</PortalStatusPill>
             <PortalStatusPill tone="success">Prontos: {summary.account}</PortalStatusPill>

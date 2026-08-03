@@ -173,6 +173,8 @@ export interface PropPayment {
   amount: number;
   currency: string;
   checkoutUrl?: string;
+  /** Plan default checkout link suggested to the admin (never overwrites a saved one). */
+  defaultCheckoutUrl?: string;
   externalReference?: string;
   dueAt?: string;
   approvedAt?: string;

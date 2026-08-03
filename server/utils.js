@@ -15,6 +15,30 @@ export function createShortCode(prefix = "") {
   return `${prefix}${shortId()}`;
 }
 
+export function createSubmissionCodeFromDocument(documentNumber, country) {
+  const isBrazil = ["brazil", "brasil"].includes((country ?? "").trim().toLowerCase());
+  const digits = (documentNumber ?? "").replace(/\D/g, "");
+
+  if (isBrazil && digits.length === 11) {
+    const checkDigit = calculateCpfCheckDigit(digits);
+    return `EW-${digits.slice(0, 6)}-${digits.slice(6, 11)}-${checkDigit}`;
+  }
+
+  const hash = digits || shortId().replace(/[^0-9]/g, "").slice(0, 10);
+  const suffix = shortId().slice(0, 4);
+  return `EW-${hash.slice(0, 8)}-${suffix}`.toUpperCase();
+}
+
+function calculateCpfCheckDigit(cpfDigits) {
+  let sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += parseInt(cpfDigits[i], 10) * (10 - i);
+  }
+  let remainder = (sum * 10) % 11;
+  if (remainder === 10) remainder = 0;
+  return String(remainder);
+}
+
 export function createOtpCode(length = 6) {
   const digits = "0123456789";
   let output = "";

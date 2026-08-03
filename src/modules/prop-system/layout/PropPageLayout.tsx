@@ -9,7 +9,7 @@ export function PropPageLayout() {
   const { visible: announcementVisible } = useAnnouncementBar();
 
   return (
-    <div className="min-h-screen bg-neutral-100 text-black font-sans_serif">
+    <div className="min-h-screen bg-[linear-gradient(187deg,rgb(246,247,249)_-24%,rgb(224,227,235)_100%)] text-black font-sans_serif">
       <AnnouncementBar />
       <Navbar />
       <DisclaimerBanner />

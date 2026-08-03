@@ -221,7 +221,7 @@ function getInitialForm(lang: "pt" | "en" | "es"): FormData {
 
 export default function PropCheckout() {
   const [params] = useSearchParams();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
   const lang: "pt" | "en" | "es" = i18n.language?.startsWith("pt")
@@ -353,10 +353,8 @@ export default function PropCheckout() {
       // Save submission code for status tracking
       localStorage.setItem("everwin-prop-last-submission", result.submissionCode);
 
-      // Redirect to Novus payment with success/cancel URLs
-      const successUrl = encodeURIComponent(`https://everwin.capital/prop/thank-you?id=${result.submissionCode}`);
-      const cancelUrl = encodeURIComponent(`https://everwin.capital/prop/checkout?plan=${selectedPlan.key}`);
-      window.location.href = `${selectedPlan.paymentUrl}?success_url=${successUrl}&cancel_url=${cancelUrl}`;
+      // Status page is the single hub: payment link, progress and account delivery.
+      navigate(`/prop/submission?id=${result.submissionCode}`, { replace: true });
     } catch (error) {
       setSubmissionError(error instanceof Error ? error.message : labels.errorFallback);
       setSubmitting(false);
@@ -364,11 +362,11 @@ export default function PropCheckout() {
   };
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(187deg,rgb(246,247,249)_-24%,rgb(224,227,235)_100%)] px-4 pb-24 pt-[110px] md:pt-[140px]">
-      <div className="pointer-events-none fixed inset-0 opacity-[0.06]" style={{
+    <div className="min-h-screen bg-[linear-gradient(187deg,rgb(246,247,249)_-24%,rgb(224,227,235)_100%)] px-4 pb-24 pt-[120px] md:pt-[150px]">
+      <div className="pointer-events-none fixed inset-0 opacity-[0.05]" style={{
         backgroundImage:
           "linear-gradient(rgba(15,23,42,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,.08) 1px, transparent 1px)",
-        backgroundSize: "58px 58px",
+        backgroundSize: "60px 60px",
       }} />
 
       <div className="relative z-[1] mx-auto max-w-[1060px]">
@@ -381,7 +379,7 @@ export default function PropCheckout() {
               </span>
             </div>
 
-            <h1 className="font-bricolage_grotesque text-[36px] font-bold leading-[1.08] tracking-[-0.02em] text-gray-800 md:text-[54px]">
+            <h1 className="font-bricolage_grotesque text-[36px] font-bold leading-[1.08] tracking-[-0.03em] text-gray-800 md:text-[54px]">
               {labels.title}
             </h1>
             <p className="max-w-[720px] font-bricolage_grotesque text-base leading-7 text-gray-500">{labels.subtitle}</p>
@@ -515,7 +513,8 @@ export default function PropCheckout() {
                       <div>{lang === "pt" ? "Loss diário: 3%" : lang === "es" ? "Pérdida diaria: 3%" : "Daily loss: 3%"}</div>
                       <div>{lang === "pt" ? "Duração: 30 dias" : lang === "es" ? "Duración: 30 días" : "Duration: 30 days"}</div>
                       <div>{lang === "pt" ? "Dias mín: 5" : lang === "es" ? "Días mín: 5" : "Min days: 5"}</div>
-                      <div>Split: 90/10</div>
+                      {/* Single source of truth with the plan cards on the landing page. */}
+                      <div>Split: {t("prop.plans.values.split")}</div>
                     </div>
                   </div>
 
@@ -541,8 +540,8 @@ export default function PropCheckout() {
 
                   <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                     <GhostButton type="button" onClick={() => setStep(2)}>{labels.back}</GhostButton>
-                    <PrimaryButton type="submit" disabled={!stepThreeValid || submitting}>
-                      {submitting ? labels.submitting : labels.submit}
+                    <PrimaryButton type="submit" disabled={!stepThreeValid || submitting || vacanciesLocked}>
+                      {submitting ? labels.submitting : vacanciesLocked ? labels.vacanciesTitle : labels.submit}
                     </PrimaryButton>
                   </div>
                   {submissionError ? <p className="mt-3 text-sm text-red-600">{submissionError}</p> : null}
@@ -553,7 +552,7 @@ export default function PropCheckout() {
 
           <Reveal delay={160}>
             <aside className="sticky top-[96px] flex flex-col gap-5">
-              <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <p className="text-xs font-medium text-slate-400">{labels.summaryTitle}</p>
 
                 <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
@@ -577,7 +576,7 @@ export default function PropCheckout() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <p className="text-xs font-medium text-slate-400">{labels.importantTitle}</p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">{labels.importantDesc}</p>
               </div>
@@ -591,7 +590,7 @@ export default function PropCheckout() {
 
 function CardSection({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
       <h3 className="mb-4 font-bricolage_grotesque text-lg font-semibold text-slate-950">{title}</h3>
       {children}
     </section>

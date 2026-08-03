@@ -11,7 +11,7 @@ export const PropFAQ = () => {
     const toggle = (i: number) => setOpenIndex(openIndex === i ? null : i);
 
     return (
-        <section className="relative w-full py-[90px] md:py-[120px] px-4 bg-gray-50">
+        <section className="relative w-full py-[90px] md:py-[120px] px-4 bg-[linear-gradient(187deg,rgb(246,247,249)_-24%,rgb(224,227,235)_100%)]">
             <div className="mx-auto w-full max-w-[760px]">
                 <Reveal>
                     <div className="flex flex-col items-center text-center gap-y-4 mb-12">

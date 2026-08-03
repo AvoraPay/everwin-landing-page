@@ -22,7 +22,7 @@ export const PropPlans = () => {
   return (
     <section
       id="prop-plans"
-      className="relative overflow-hidden bg-[linear-gradient(180deg,rgba(248,250,252,0)_0%,rgba(248,250,252,0.85)_24%,rgba(255,255,255,1)_100%)] px-4 py-[90px] md:py-[120px]"
+      className="relative overflow-hidden bg-[linear-gradient(187deg,rgb(246,247,249)_-24%,rgb(224,227,235)_100%)] px-4 py-[90px] md:py-[120px]"
     >
       <div className="pointer-events-none absolute inset-0 opacity-[0.06]" style={{
         backgroundImage:

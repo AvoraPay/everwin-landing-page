@@ -11,7 +11,7 @@ export const PropCTA = () => {
         <div className="pointer-events-none absolute left-1/2 top-0 h-[320px] w-[760px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[100px]" />
       </Parallax>
 
-      <div className="relative z-[1] mx-auto flex w-full max-w-[760px] flex-col items-center gap-y-6 rounded-[30px] border border-gray-200 bg-white/85 px-6 py-12 text-center shadow-[0_25px_65px_-48px_rgba(15,23,42,0.6)] md:px-10 md:py-14">
+      <div className="relative z-[1] mx-auto flex w-full max-w-[760px] flex-col items-center gap-y-6 rounded-2xl border border-gray-200 bg-white/85 px-6 py-12 text-center shadow-[0_25px_65px_-48px_rgba(15,23,42,0.6)] md:px-10 md:py-14">
         <Reveal>
           <h2 className="font-bricolage_grotesque text-[38px] font-bold leading-[42px] text-gray-800 md:text-[56px] md:leading-[60px]">
             {t("prop.cta.title_1")}{" "}
