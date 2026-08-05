@@ -2676,6 +2676,26 @@ app.post("/api/webhooks/novus", webhookLimiter, async (req, res) => {
     });
   }
 
+  // A matching fee alone identifies the plan, never the buyer: two applicants on
+  // the same plan are indistinguishable by price. Approving on that basis would
+  // release an account to the wrong person, so it is only ever a suggestion.
+  if (via === "amount") {
+    await recordEvent("unmatched", {
+      applicationId: row.id,
+      amount,
+      currency,
+      email,
+      ...planInfo,
+      note: `${planLabel} Comprador não identificado (sem e-mail ou documento em comum). Sugestão: inscrição ${row.submission_code}. Confirme antes de aprovar.`,
+    });
+    return res.status(200).json({
+      received: true,
+      matched: false,
+      reason: "buyer not identified",
+      suggestion: row.submission_code,
+    });
+  }
+
   // Novus does not tell us which product was bought, so the fee is the guard:
   // a buyer who also has a pending prop application never gets it approved by
   // an unrelated purchase of a different value.
