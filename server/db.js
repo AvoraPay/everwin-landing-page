@@ -534,6 +534,20 @@ export function mapUserRow(row) {
   };
 }
 
+/**
+ * A credential encrypted under a different PROP_DATA_SECRET cannot be read back.
+ * That is a single broken row, not a reason to fail the whole accounts listing —
+ * surface it as unreadable so the admin can rotate it.
+ */
+function readSecret(encrypted) {
+  if (!encrypted) return "";
+  try {
+    return decryptSecret(encrypted);
+  } catch {
+    return "";
+  }
+}
+
 export function mapAccountRow(row, includeSecrets = false) {
   const status = ACCOUNT_STATUSES.includes(row.status) ? row.status : "pending_payment";
 
@@ -544,7 +558,7 @@ export function mapAccountRow(row, includeSecrets = false) {
     planId: row.plan_id,
     accountId: row.account_id,
     platformLogin: row.platform_login,
-    platformPassword: includeSecrets ? decryptSecret(row.platform_password_enc) : "••••••••",
+    platformPassword: includeSecrets ? readSecret(row.platform_password_enc) : "••••••••",
     brokerName: row.broker_name ?? undefined,
     platformUserId: row.platform_user_id ?? undefined,
     platformEmail: row.platform_email ?? undefined,
