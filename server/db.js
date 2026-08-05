@@ -270,6 +270,29 @@ async function createSchema() {
     );
   `);
 
+  // Every payment webhook received, matched or not, so nothing is lost silently.
+  await exec(`
+    CREATE TABLE IF NOT EXISTS payment_webhook_events (
+      id TEXT PRIMARY KEY,
+      provider TEXT NOT NULL,
+      event_type TEXT,
+      external_id TEXT,
+      status TEXT NOT NULL,
+      matched_application_id TEXT,
+      amount NUMERIC,
+      currency TEXT,
+      customer_email TEXT,
+      note TEXT,
+      payload TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_payment_webhook_status ON payment_webhook_events(status, created_at DESC);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_payment_webhook_external
+      ON payment_webhook_events(provider, external_id)
+      WHERE external_id IS NOT NULL;
+  `);
+
   // Stock of pre-created broker accounts, assigned to buyers at approval time.
   await exec(`
     CREATE TABLE IF NOT EXISTS pool_accounts (

@@ -306,6 +306,7 @@ const DEFAULT_VACANCIES_MESSAGE =
 const SETTINGS_META = {
   everwin_admin_bearer: { sensitive: true },
   everwin_webhook_secret: { sensitive: true },
+  novus_webhook_secret: { sensitive: true },
   prop_vacancies_locked: { sensitive: false, defaultValue: "false" },
   prop_vacancies_message: { sensitive: false, defaultValue: DEFAULT_VACANCIES_MESSAGE },
 };
@@ -2384,6 +2385,253 @@ app.get("/api/settings/test-broker", requireAuth, requireRole("admin"), async (_
     }
     return res.json({ ok: false, stage: "network", expiresAt, message });
   }
+});
+
+// ─── NOVUS PAYMENT WEBHOOK ────────────────────────────────────────────────────
+
+/** Slugs of the prop checkout links — anything else on the account is not ours. */
+const PROP_LINK_SLUGS = Object.values(PLAN_CHECKOUT_LINKS).map((url) => url.split("/link/")[1]).filter(Boolean);
+
+/** Collects every string and number in a nested payload, so field names do not matter. */
+function flattenValues(value, depth = 0, acc = []) {
+  if (depth > 6 || value === null || value === undefined) return acc;
+  if (typeof value === "string" || typeof value === "number") {
+    acc.push(String(value));
+    return acc;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) flattenValues(item, depth + 1, acc);
+    return acc;
+  }
+  if (typeof value === "object") {
+    for (const item of Object.values(value)) flattenValues(item, depth + 1, acc);
+  }
+  return acc;
+}
+
+function findFirst(payload, keys) {
+  const stack = [payload];
+  let depth = 0;
+  while (stack.length > 0 && depth < 200) {
+    depth += 1;
+    const current = stack.shift();
+    if (!current || typeof current !== "object") continue;
+    for (const key of keys) {
+      const value = current[key];
+      if (typeof value === "string" && value.trim()) return value.trim();
+      if (typeof value === "number") return String(value);
+    }
+    for (const value of Object.values(current)) {
+      if (value && typeof value === "object") stack.push(value);
+    }
+  }
+  return "";
+}
+
+/** Novus sends cents on some payloads and units on others — normalise to units. */
+function normalizeAmount(raw) {
+  const numeric = Number(String(raw ?? "").replace(/[^\d.-]/g, ""));
+  if (!Number.isFinite(numeric) || numeric <= 0) return 0;
+  return numeric;
+}
+
+async function resolveApplicationFromPayload(payload, amount) {
+  const haystack = flattenValues(payload).join(" ");
+
+  // 1. Our own submission code, if the provider echoes it back.
+  const codeMatch = haystack.match(/EW-[A-Z0-9-]{6,}/i);
+  if (codeMatch) {
+    const row = await one("SELECT * FROM applications WHERE upper(submission_code) = upper($1)", [codeMatch[0]]);
+    if (row) return { row, via: "submission_code" };
+  }
+
+  // 2. Buyer e-mail against an application still awaiting payment.
+  const email = findFirst(payload, ["email", "customer_email", "customerEmail", "payer_email", "buyer_email"]);
+  if (email) {
+    const row = await one(
+      `SELECT * FROM applications
+       WHERE normalized_email = $1 AND payment_status <> 'approved' AND status NOT IN ('cancelled','rejected')
+       ORDER BY created_at DESC LIMIT 1`,
+      [normalizeEmail(email)],
+    );
+    if (row) return { row, via: "email", email };
+  }
+
+  // 3. Buyer document.
+  const document = findFirst(payload, ["cpf", "document", "documentNumber", "taxId", "tax_id", "cpf_cnpj"]);
+  const digits = String(document).replace(/\D/g, "");
+  if (digits.length === 11) {
+    const row = await one(
+      `SELECT * FROM applications
+       WHERE cpf_hash = $1 AND payment_status <> 'approved' AND status NOT IN ('cancelled','rejected')
+       ORDER BY created_at DESC LIMIT 1`,
+      [sha256(digits)],
+    );
+    if (row) return { row, via: "document", email };
+  }
+
+  // 4. Last resort: a single pending application for exactly this amount.
+  if (amount > 0) {
+    const rows = await many(
+      `SELECT * FROM applications
+       WHERE amount = $1 AND payment_status <> 'approved' AND status NOT IN ('cancelled','rejected')
+       ORDER BY created_at DESC LIMIT 2`,
+      [Math.round(amount)],
+    );
+    if (rows.length === 1) return { row: rows[0], via: "amount", email };
+  }
+
+  return { row: null, via: "", email };
+}
+
+app.post("/api/webhooks/novus", webhookLimiter, async (req, res) => {
+  // Novus only lets us configure a URL, so the shared secret travels in the
+  // query string; a header is still accepted for clients that support one.
+  const provided =
+    (typeof req.query.token === "string" ? req.query.token : "") ||
+    req.headers["x-webhook-secret"] ||
+    (req.headers.authorization?.startsWith("Bearer ") ? req.headers.authorization.slice(7) : "");
+
+  const expected = await getSystemSettingValue("novus_webhook_secret");
+  if (!expected) {
+    return res.status(503).json({ message: "Webhook secret not configured. Set it in Admin > Configurações." });
+  }
+
+  const a = Buffer.from(String(provided ?? ""), "utf8");
+  const b = Buffer.from(expected, "utf8");
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    return res.status(401).json({ message: "Invalid webhook secret." });
+  }
+
+  const payload = req.body ?? {};
+  const eventType = findFirst(payload, ["event", "type", "event_type", "eventType"]) || "unknown";
+  const externalId = findFirst(payload, ["transaction_id", "transactionId", "id", "reference", "order_id"]) || null;
+  const haystack = flattenValues(payload).join(" ");
+
+  const recordEvent = async (status, extra = {}) =>
+    query(
+      `INSERT INTO payment_webhook_events (
+         id, provider, event_type, external_id, status, matched_application_id,
+         amount, currency, customer_email, note, payload, created_at
+       ) VALUES ($1,'novus',$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+       ON CONFLICT DO NOTHING`,
+      [
+        uid("whk"),
+        eventType,
+        externalId,
+        status,
+        extra.applicationId ?? null,
+        extra.amount ?? null,
+        extra.currency ?? null,
+        extra.email ?? null,
+        extra.note ?? null,
+        JSON.stringify(payload).slice(0, 20000),
+        nowISO(),
+      ],
+    );
+
+  // Only the prop checkout links matter — the same Novus account sells other things.
+  const isPropLink = PROP_LINK_SLUGS.some((slug) => haystack.includes(slug));
+  if (!isPropLink) {
+    await recordEvent("ignored", { note: "Evento fora dos links de prop trading." });
+    return res.status(200).json({ received: true, ignored: true, reason: "not a prop link" });
+  }
+
+  if (!/paid|approved|confirm|succe/i.test(eventType)) {
+    await recordEvent("ignored", { note: `Evento ${eventType} não é de pagamento confirmado.` });
+    return res.status(200).json({ received: true, ignored: true, reason: "not a paid event" });
+  }
+
+  if (externalId) {
+    const seen = await one(
+      "SELECT id, status FROM payment_webhook_events WHERE provider = 'novus' AND external_id = $1 AND status = 'processed'",
+      [externalId],
+    );
+    if (seen) return res.status(200).json({ received: true, duplicate: true });
+  }
+
+  const rawAmount = findFirst(payload, ["amount", "value", "total", "paid_amount", "amount_paid"]);
+  const amount = normalizeAmount(rawAmount);
+  const currency = findFirst(payload, ["currency", "currency_code"]) || "BRL";
+
+  const { row, via, email } = await resolveApplicationFromPayload(payload, amount);
+
+  if (!row) {
+    await recordEvent("unmatched", {
+      amount,
+      currency,
+      email,
+      note: "Pagamento de link prop sem inscrição correspondente. Aprovar manualmente.",
+    });
+    return res.status(200).json({ received: true, matched: false });
+  }
+
+  try {
+    await syncPaymentStatus({
+      applicationId: row.id,
+      status: "approved",
+      approvedAt: nowISO(),
+      externalReference: externalId ?? undefined,
+      provider: "novus",
+    });
+
+    const application = mapApplicationRow(row);
+    const subject =
+      application.locale === "en"
+        ? `Payment confirmed • ${application.submissionCode}`
+        : application.locale === "es"
+          ? `Pago confirmado • ${application.submissionCode}`
+          : `Pagamento confirmado • ${application.submissionCode}`;
+
+    await sendAndLogEmailBestEffort(
+      "payment.approved",
+      () => sendPaymentApprovedEmail({ application, statusUrl: buildStatusUrl(application.submissionCode) }),
+      { applicationId: application.id, recipient: application.email, subject },
+    );
+
+    await recordEvent("processed", {
+      applicationId: row.id,
+      amount,
+      currency,
+      email,
+      note: `Casado por ${via}.`,
+    });
+    await audit(null, "NOVUS_PAYMENT_APPROVED", "application", row.id, {
+      submissionCode: row.submission_code,
+      externalId,
+      via,
+    });
+
+    return res.status(200).json({ received: true, matched: true, submissionCode: row.submission_code });
+  } catch (error) {
+    await recordEvent("failed", {
+      applicationId: row.id,
+      amount,
+      currency,
+      email,
+      note: error instanceof Error ? error.message : "Falha ao processar",
+    });
+    console.error("[Novus webhook]", error);
+    return res.status(200).json({ received: true, matched: true, processed: false });
+  }
+});
+
+app.get("/api/webhooks/novus/events", requireAuth, requireRole("admin"), async (_req, res) => {
+  const rows = await many("SELECT * FROM payment_webhook_events ORDER BY created_at DESC LIMIT 100");
+  res.json({
+    events: rows.map((row) => ({
+      id: row.id,
+      eventType: row.event_type,
+      externalId: row.external_id,
+      status: row.status,
+      matchedApplicationId: row.matched_application_id,
+      amount: row.amount === null ? null : Number(row.amount),
+      currency: row.currency,
+      customerEmail: row.customer_email,
+      note: row.note,
+      createdAt: row.created_at,
+    })),
+  });
 });
 
 // ─── ACCOUNT POOL (pre-created broker accounts, assigned on approval) ─────────

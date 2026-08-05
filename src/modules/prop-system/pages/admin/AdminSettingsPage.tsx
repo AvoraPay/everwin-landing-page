@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowDown, ArrowRight, Check, Copy, Eye, EyeOff, Info, Loader2, Lock, PlugZap, Save, Shield, TriangleAlert, Unlock, Zap, Webhook } from "lucide-react";
+import { ArrowDown, ArrowRight, Check, Copy, CreditCard, Eye, EyeOff, Info, Loader2, Lock, PlugZap, Save, Shield, TriangleAlert, Unlock, Zap, Webhook } from "lucide-react";
 import { Button } from "../../../../components/ui/button";
 import { Input } from "../../../../components/ui/input";
 import { Textarea } from "../../../../components/ui/textarea";
@@ -73,6 +73,13 @@ function InlineFeedback({ feedback }: { feedback: { ok: boolean; message: string
   );
 }
 
+/** URL-safe secret: it travels in the webhook query string. */
+function generateSecret(length = 40) {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(length));
+  return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join("");
+}
+
 function SectionNumber({ n }: { n: number }) {
   return <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">{n}</span>;
 }
@@ -92,6 +99,23 @@ export function AdminSettingsPage() {
   const [webhookResult, setWebhookResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [testingBroker, setTestingBroker] = useState(false);
   const [brokerStatus, setBrokerStatus] = useState<BrokerConnectionStatus | null>(null);
+  const [novusSecret, setNovusSecret] = useState("");
+  const [savingNovus, setSavingNovus] = useState(false);
+  const [feedbackNovus, setFeedbackNovus] = useState<{ ok: boolean; message: string } | null>(null);
+
+  const handleSaveNovus = async () => {
+    setSavingNovus(true);
+    setFeedbackNovus(null);
+    try {
+      await updateSettingsApi({ novus_webhook_secret: novusSecret.trim() });
+      await refreshStored();
+      setFeedbackNovus({ ok: true, message: "Segredo salvo. Copie a URL abaixo e cadastre na Novus." });
+    } catch (err) {
+      setFeedbackNovus({ ok: false, message: err instanceof Error ? err.message : "Falha ao salvar." });
+    } finally {
+      setSavingNovus(false);
+    }
+  };
 
   const handleTestBroker = async () => {
     setTestingBroker(true);
@@ -288,7 +312,59 @@ export function AdminSettingsPage() {
             </div>
           </PortalSection>
 
-          {/* SECTION 3: Vagas */}
+          {/* SECTION 3: Novus */}
+          <PortalSection
+            title={<span className="flex items-center gap-2"><SectionNumber n={3} /> <CreditCard className="h-4 w-4" /> Webhook da Novus — Pagamentos</span>}
+            description="Quando um pagamento é confirmado na Novus, a inscrição é aprovada e a conta é liberada automaticamente."
+          >
+            <div className="space-y-4">
+              <SecretField
+                label="Segredo do Webhook Novus"
+                description="Vai dentro da URL, porque o painel da Novus não permite header de autenticação."
+                value={novusSecret}
+                onChange={setNovusSecret}
+                placeholder="clique em Gerar para criar um segredo forte"
+                stored={stored.novus_webhook_secret}
+              />
+
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <Button type="button" variant="outline" onClick={() => setNovusSecret(generateSecret())} className="h-10 rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 dark:border-white/[0.07] dark:bg-[#171a23] dark:text-white/70">
+                  <Zap className="h-4 w-4" /> Gerar segredo
+                </Button>
+                <Button type="button" onClick={() => void handleSaveNovus()} disabled={savingNovus || !novusSecret.trim()} className="h-10 rounded-xl bg-emerald-600 text-white hover:bg-emerald-500">
+                  {savingNovus ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Salvar segredo
+                </Button>
+              </div>
+
+              {feedbackNovus && <InlineFeedback feedback={feedbackNovus} />}
+
+              <PortalSurface tone="subtle" padding="sm">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-white/40">Cole na Novus</p>
+                <p className="mb-3 text-xs text-slate-500 dark:text-white/40">
+                  Crie um webhook para o evento <strong>transaction.paid</strong> com esta URL.
+                </p>
+                <CopyBlock
+                  label="URL do Webhook"
+                  value={
+                    novusSecret.trim()
+                      ? `https://www.everwin.capital/api/webhooks/novus?token=${novusSecret.trim()}`
+                      : "Gere e salve o segredo para ver a URL completa"
+                  }
+                />
+              </PortalSurface>
+
+              <PortalSurface tone="subtle" padding="sm">
+                <p className="text-xs leading-relaxed text-slate-600 dark:text-white/55">
+                  Só eventos dos 4 links de prop trading são processados — qualquer outra venda da mesma conta Novus é
+                  registrada e ignorada. A inscrição é encontrada pelo código, e-mail ou documento do comprador; se nada
+                  casar, o evento fica marcado como não identificado para aprovação manual.
+                </p>
+              </PortalSurface>
+            </div>
+          </PortalSection>
+
+          {/* SECTION 4: Vagas */}
           <PortalSection
             title={<span className="flex items-center gap-2"><SectionNumber n={3} /> <Lock className="h-4 w-4" /> Controle de Vagas</span>}
             description="Controla se novos links de pagamento são liberados para candidatos aprovados."

@@ -128,10 +128,19 @@ async function request<T>(path: string, init?: RequestInit, retry = true): Promi
     if (refreshed) {
       return request<T>(path, init, false);
     }
-    // Only redirect to login if user had a token (actual session expiry).
-    // If there was no token, this is a bootstrap check — just throw.
-    if (token && typeof window !== "undefined" && !window.location.pathname.includes("/prop/login")) {
+
+    // Public pages (checkout, submission status, thank-you) live under /prop too
+    // and are wrapped by the same provider. A stale token there must never throw
+    // the applicant out of the page they are tracking their payment on — only a
+    // session inside the portal itself is worth bouncing to the login screen.
+    const inPortal =
+      typeof window !== "undefined" &&
+      (window.location.pathname.startsWith("/prop/admin") || window.location.pathname.startsWith("/prop/client"));
+
+    if (token && inPortal) {
       window.location.href = "/prop/login";
+    } else {
+      clearTokens();
     }
     throw new Error("Session expired.");
   }
