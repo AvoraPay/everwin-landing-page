@@ -7,3 +7,6 @@ server/data/*.db
 server/data/*.db-shm
 server/data/*.db-wal
 .vercel
+
+# Pool de contas prop: contem senhas em texto puro
+scripts/out

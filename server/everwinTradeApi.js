@@ -1,12 +1,15 @@
 /**
- * Client for the Everwin trading platform admin API (api.everwin.trade).
+ * Client for the Everwin trading platform admin API (api.everwin.capital).
  * Handles provisioning new trading accounts when prop submissions are approved
  * and enforcing rules (auto-block on deposit/withdrawal).
  */
 
 import { one } from "./db.js";
 
-const EVERWIN_API_BASE = "https://api.everwin.trade";
+const EVERWIN_API_BASE = process.env.EVERWIN_API_BASE ?? "https://api.everwin.capital";
+
+/** All prop trading accounts live under this domain. */
+export const PROP_ACCOUNT_DOMAIN = process.env.PROP_ACCOUNT_DOMAIN ?? "everwin.capital";
 
 /** Reads admin bearer token from DB system_settings (admin can update it in the panel) */
 export async function getAdminToken() {
@@ -100,7 +103,7 @@ export async function unblockPlatformUser(userId, reason) {
 
 /**
  * Full 6-step provision sequence when a submission payment is approved:
- * 1. Create user → email: username@everwin.trade
+ * 1. Create user → email: username@everwin.capital
  * 2. Update profile with real form data (name, cpf, phone, city, country)
  * 3. Verify email manually
  * 4. Mark as marketing/influencer
@@ -114,7 +117,7 @@ export async function provisionTradingAccount({ application, plan, temporaryPass
   const ln = (application.lastName ?? "").trim().toUpperCase();
 
   let username = buildPlatformUsername(application.firstName, application.lastName);
-  let platformEmail = `${username}@everwin.trade`;
+  let platformEmail = `${username}@${PROP_ACCOUNT_DOMAIN}`;
 
   const country = application.country ?? "Brazil";
 
@@ -132,7 +135,7 @@ export async function provisionTradingAccount({ application, plan, temporaryPass
   } catch {
     const suffix = String(Math.floor(Math.random() * 9000) + 1000);
     username = `${username.slice(0, 24)}${suffix}`;
-    platformEmail = `${username}@everwin.trade`;
+    platformEmail = `${username}@${PROP_ACCOUNT_DOMAIN}`;
     createRes = await createPlatformUser({
       email: platformEmail,
       username,
