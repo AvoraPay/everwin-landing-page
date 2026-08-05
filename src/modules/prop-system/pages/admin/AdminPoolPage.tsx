@@ -102,9 +102,26 @@ export function AdminPoolPage() {
         return;
       }
 
-      const result = await importPoolApi(rows);
-      const parts = [`${result.inserted} novas`, `${result.updated} atualizadas`];
-      if (result.skipped.length > 0) parts.push(`${result.skipped.length} ignoradas`);
+      // Chunked: a full pool in one request outlives the serverless timeout.
+      const CHUNK = 20;
+      let inserted = 0;
+      let updated = 0;
+      let skipped = 0;
+
+      for (let i = 0; i < rows.length; i += CHUNK) {
+        const batch = rows.slice(i, i + CHUNK);
+        const result = await importPoolApi(batch);
+        inserted += result.inserted;
+        updated += result.updated;
+        skipped += result.skipped.length;
+        setFeedback({
+          ok: true,
+          message: `Importando... ${Math.min(i + CHUNK, rows.length)} de ${rows.length}`,
+        });
+      }
+
+      const parts = [`${inserted} novas`, `${updated} atualizadas`];
+      if (skipped > 0) parts.push(`${skipped} ignoradas`);
       setFeedback({ ok: true, message: `Importação concluída: ${parts.join(", ")}.` });
       await load();
     } catch (error) {
