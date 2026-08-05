@@ -12,40 +12,55 @@ if (isProduction) {
   }
 }
 
-const rawDatabaseUrl = process.env.DATABASE_URL ?? "";
-const rawCorsOrigins = process.env.PROP_CORS_ORIGIN ?? "";
+/**
+ * Env values pasted through dashboards routinely carry trailing newlines or
+ * quotes. Untrimmed, a value of "\n" is truthy and silently wins over a real
+ * fallback — that is how the plan checkout links were once blanked out.
+ */
+function env(name, fallback = "") {
+  const raw = process.env[name];
+  if (raw === undefined || raw === null) return fallback;
+  const cleaned = raw.trim().replace(/^["']|["']$/g, "").trim();
+  return cleaned === "" ? fallback : cleaned;
+}
+
+/** Production must work even if an env var is missing or was pasted blank. */
+const PROD_BASE_URL = "https://www.everwin.capital";
+const PROD_CORS = "https://everwin.capital,https://www.everwin.capital";
+
+const rawDatabaseUrl = env("DATABASE_URL");
+const rawCorsOrigins = env("PROP_CORS_ORIGIN", isProduction ? PROD_CORS : "");
 
 export const config = {
   isProduction,
-  port: Number(process.env.PROP_API_PORT ?? 8787),
+  port: Number(env("PROP_API_PORT", "8787")),
   corsOrigins: rawCorsOrigins
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean),
-  appBaseUrl: process.env.APP_BASE_URL ?? "http://localhost:5173",
-  portalDomain: process.env.PROP_PORTAL_EMAIL_DOMAIN ?? "everwin.trade",
-  accessTokenSecret: process.env.JWT_ACCESS_SECRET ?? DEFAULT_ACCESS_SECRET,
-  refreshTokenSecret: process.env.JWT_REFRESH_SECRET ?? DEFAULT_REFRESH_SECRET,
-  dataSecret: process.env.PROP_DATA_SECRET ?? DEFAULT_DATA_SECRET,
-  accessTokenTtl: (process.env.JWT_ACCESS_TTL ?? "15m").trim(),
-  refreshTokenTtl: (process.env.JWT_REFRESH_TTL ?? "7d").trim(),
+  appBaseUrl: env("APP_BASE_URL", isProduction ? PROD_BASE_URL : "http://localhost:5173"),
+  portalDomain: env("PROP_PORTAL_EMAIL_DOMAIN", "everwin.capital"),
+  accessTokenSecret: env("JWT_ACCESS_SECRET", DEFAULT_ACCESS_SECRET),
+  refreshTokenSecret: env("JWT_REFRESH_SECRET", DEFAULT_REFRESH_SECRET),
+  dataSecret: env("PROP_DATA_SECRET", DEFAULT_DATA_SECRET),
+  accessTokenTtl: env("JWT_ACCESS_TTL", "15m"),
+  refreshTokenTtl: env("JWT_REFRESH_TTL", "7d"),
   databaseUrl: rawDatabaseUrl,
-  databasePoolUrl: process.env.DATABASE_POOL_URL ?? "",
-  databaseSsl: (process.env.PROP_DATABASE_SSL ?? "true") !== "false",
-  resendApiKey: process.env.RESEND_API_KEY ?? "",
-  resendFrom: process.env.RESEND_FROM_EMAIL ?? "Everwin Prop <prop@everwin.trade>",
-  supportEmail: process.env.SUPPORT_EMAIL ?? "support@everwin.capital",
-  stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
-  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
-  reminderCron: process.env.PROP_REMINDER_CRON ?? "*/10 * * * *",
-  dailySyncCron: process.env.PROP_DAILY_SYNC_CRON ?? "0 3 * * *",
-  paymentProvider: process.env.PROP_PAYMENT_PROVIDER ?? "manual_link",
-  defaultCheckoutBaseUrl: process.env.PROP_CHECKOUT_BASE_URL ?? "",
-  viteSupabaseUrl: process.env.VITE_SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+  databasePoolUrl: env("DATABASE_POOL_URL"),
+  databaseSsl: env("PROP_DATABASE_SSL", "true") !== "false",
+  resendApiKey: env("RESEND_API_KEY"),
+  resendFrom: env("RESEND_FROM_EMAIL", "Everwin Prop <prop@everwin.trade>"),
+  supportEmail: env("SUPPORT_EMAIL", "support@everwin.capital"),
+  stripeSecretKey: env("STRIPE_SECRET_KEY"),
+  stripeWebhookSecret: env("STRIPE_WEBHOOK_SECRET"),
+  reminderCron: env("PROP_REMINDER_CRON", "*/10 * * * *"),
+  dailySyncCron: env("PROP_DAILY_SYNC_CRON", "0 3 * * *"),
+  paymentProvider: env("PROP_PAYMENT_PROVIDER", "manual_link"),
+  // Only honoured when it is a real URL — a stray newline must never win here.
+  defaultCheckoutBaseUrl: /^https?:\/\//.test(env("PROP_CHECKOUT_BASE_URL")) ? env("PROP_CHECKOUT_BASE_URL") : "",
+  viteSupabaseUrl: env("VITE_SUPABASE_URL") || env("NEXT_PUBLIC_SUPABASE_URL"),
   viteSupabasePublishableKey:
-    process.env.VITE_SUPABASE_PUBLISHABLE_KEY ??
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ??
-    "",
+    env("VITE_SUPABASE_PUBLISHABLE_KEY") || env("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY"),
 };
 
 if (!config.databaseUrl) {

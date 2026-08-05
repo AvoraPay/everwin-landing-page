@@ -42,6 +42,8 @@ const token = arg("token", process.env.EVERWIN_ADMIN_BEARER ?? "");
 const rate = Number(arg("rate", "5.37"));
 const dryRun = process.argv.includes("--dry-run");
 const limit = Number(arg("limit", "0"));
+/** Drains every pool account to zero instead of reconciling against the plan. */
+const zero = process.argv.includes("--zero");
 
 if (!token) {
   console.error('Faltou o token. Use --token="eyJ..."');
@@ -114,7 +116,7 @@ for (const row of pool) {
 
   const size = Number(row.accountSize);
   // USD plans are already denominated in dollars; BRL plans convert at --rate.
-  const target = row.currency === "USD" ? size : Math.round((size / rate) * 100) / 100;
+  const target = zero ? 0 : row.currency === "USD" ? size : Math.round((size / rate) * 100) / 100;
   const current = realUsdBalance(user);
   const delta = Math.round((target - current) * 100) / 100;
 
@@ -131,7 +133,7 @@ for (const row of pool) {
 const actionable = plan.filter((item) => item.status === "ADICIONAR" || item.status === "REMOVER");
 const work = limit > 0 ? actionable.slice(0, limit) : actionable;
 
-console.log(`\nCâmbio: ${rate} | Tolerância: ${TOLERANCE}`);
+console.log(`\n${zero ? "MODO ZERAR — todas as contas do pool vão a 0" : `Câmbio: ${rate}`} | Tolerância: ${TOLERANCE}`);
 console.log(`Já corretas : ${plan.filter((p) => p.status === "OK").length}`);
 console.log(`A ajustar   : ${actionable.length}`);
 console.log(`Sem usuário : ${plan.filter((p) => p.status === "SEM_USUARIO").length}`);

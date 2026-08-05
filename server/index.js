@@ -280,16 +280,16 @@ const PLAN_ID_TO_PUBLIC_KEY = {
   plan_usd_75k: "plan_4",
 };
 
-function resolveCheckoutUrl(planId, submissionCode) {
+/**
+ * Novus defines success/cancel redirects in its own panel, not per request, so
+ * the link is used exactly as configured. The thank-you page recovers the
+ * submission code from localStorage when the provider returns without one.
+ */
+function resolveCheckoutUrl(planId) {
   const publicKey = PLAN_ID_TO_PUBLIC_KEY[planId];
-  const base = config.defaultCheckoutBaseUrl || (publicKey ? PLAN_CHECKOUT_LINKS[publicKey] : "");
-  if (!base) return "";
-  if (!submissionCode) return base;
-
-  const successUrl = `${config.appBaseUrl}/prop/thank-you?id=${submissionCode}`;
-  const cancelUrl = `${config.appBaseUrl}/prop/submission?id=${submissionCode}`;
-  const separator = base.includes("?") ? "&" : "?";
-  return `${base}${separator}success_url=${encodeURIComponent(successUrl)}&cancel_url=${encodeURIComponent(cancelUrl)}`;
+  const link = publicKey ? PLAN_CHECKOUT_LINKS[publicKey] : "";
+  // An explicit override only applies when it is a real URL (see config.js).
+  return config.defaultCheckoutBaseUrl || link || "";
 }
 
 function buildStatusUrl(submissionCode) {
@@ -916,9 +916,20 @@ const statusSchema = z.object({
   ]),
 });
 
+/**
+ * Approving a payment must never be blocked by a malformed checkout link — the
+ * admin is confirming money received, not editing a URL. Anything that is not a
+ * real link is dropped instead of rejecting the whole request.
+ */
+const looseCheckoutUrl = z.preprocess((value) => {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return /^https?:\/\//.test(trimmed) ? trimmed : undefined;
+}, z.string().url().optional());
+
 const updateSubmissionPaymentSchema = z.object({
   status: z.enum(["pending", "overdue", "approved", "failed", "cancelled"]),
-  checkoutUrl: z.string().url().optional().or(z.literal("")),
+  checkoutUrl: looseCheckoutUrl,
   externalReference: z.string().optional().or(z.literal("")),
   adminNotes: z.string().optional().or(z.literal("")),
 });
@@ -1039,7 +1050,7 @@ app.post("/api/public/submissions", submissionLimiter, async (req, res) => {
   const submittedAt = nowISO();
   const paymentDueAt = addHours(submittedAt, 1);
   const paymentProvider = "manual_link";
-  const checkoutUrl = resolveCheckoutUrl(plan.id, submissionCode);
+  const checkoutUrl = resolveCheckoutUrl(plan.id);
 
   const applicationRow = await withTransaction(async (trx) => {
     await trx.query(
@@ -1190,7 +1201,7 @@ app.get("/api/public/submissions/:code", async (req, res) => {
           bundle.application.paymentStatus === "approved"
             ? undefined
             : bundle.payment.checkoutUrl ||
-              resolveCheckoutUrl(bundle.application.planId, bundle.application.submissionCode) ||
+              resolveCheckoutUrl(bundle.application.planId) ||
               undefined,
       }
     : bundle.payment;
@@ -1545,7 +1556,7 @@ app.get("/api/submissions", requireAuth, requireRole("admin"), async (_req, res)
       status: row.payment_row_status,
       checkoutUrl: row.checkout_url,
       // Suggested link for the plan, so the admin never has to paste one by hand.
-      defaultCheckoutUrl: resolveCheckoutUrl(row.plan_id, row.submission_code),
+      defaultCheckoutUrl: resolveCheckoutUrl(row.plan_id),
       provider: row.provider,
       dueAt: row.due_at,
       approvedAt: row.approved_at,
