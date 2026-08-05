@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Menu,
   Moon,
+  PackageOpen,
   Settings2,
   ShieldCheck,
   Sun,
@@ -249,6 +250,7 @@ function getAdminNavigation(t: (key: string, fallback?: string) => string): Navi
         { to: "/prop/admin/users", label: "Clientes", icon: CircleUserRound },
         { to: "/prop/admin/submissions", label: "Inscrições", icon: BriefcaseBusiness },
         { to: "/prop/admin/accounts", label: "Contas de Operação", icon: WalletCards },
+        { to: "/prop/admin/pool", label: "Estoque de Contas", icon: PackageOpen },
       ],
     },
     {

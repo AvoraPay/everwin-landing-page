@@ -32,6 +32,7 @@ import {
 } from "./db.js";
 import { requireAuth, requireRole } from "./middleware/auth.js";
 import {
+  decryptSecret,
   encryptSecret,
   hashPassword,
   sha256,
@@ -69,6 +70,7 @@ import { createCheckoutSession, isStripeEnabled, verifyStripeWebhook } from "./s
 import {
   blockPlatformUser,
   fetchPlatformUser,
+  getAdminToken,
   getWebhookSecret,
   provisionTradingAccount,
   resetPlatformPassword,
@@ -629,18 +631,30 @@ async function autoProvisionFullAccount(application) {
     accountInternalId = existingAccount.id;
   }
 
-  // 3. Provision trading platform (best-effort)
+  // 3. Attach a trading account. Pool first — it needs no broker token, so it
+  // works at any hour. Only fall back to live provisioning when stock is empty.
   const accountRow = await one("SELECT * FROM accounts WHERE id = $1", [accountInternalId]);
   if (accountRow && !accountRow.platform_user_id) {
-    try {
-      const platformResult = await provisionTradingAccount({ application, plan, temporaryPassword });
-      await query(
-        `UPDATE accounts SET platform_user_id = $1, platform_email = $2, updated_at = $3 WHERE id = $4`,
-        [platformResult.platformUserId, platformResult.platformEmail, nowISO(), accountInternalId],
-      );
-      console.log(`[AutoProvision] Platform account provisioned: ${platformResult.platformEmail}`);
-    } catch (platformErr) {
-      console.warn("[AutoProvision] Platform provision skipped:", platformErr instanceof Error ? platformErr.message : platformErr);
+    const pooled = await assignPoolAccount({ planId: plan.id, propAccountId: accountInternalId, actorUserId: null });
+
+    if (pooled) {
+      console.log(`[AutoProvision] Pool account ${pooled.identifier} assigned to ${portalUser.email}`);
+      await audit(null, "ASSIGN_POOL_ACCOUNT", "account", accountInternalId, {
+        identifier: pooled.identifier,
+        submissionCode: application.submissionCode,
+      });
+    } else {
+      console.warn(`[AutoProvision] Pool empty for ${plan.id} — falling back to live provisioning`);
+      try {
+        const platformResult = await provisionTradingAccount({ application, plan, temporaryPassword });
+        await query(
+          `UPDATE accounts SET platform_user_id = $1, platform_email = $2, updated_at = $3 WHERE id = $4`,
+          [platformResult.platformUserId, platformResult.platformEmail, nowISO(), accountInternalId],
+        );
+        console.log(`[AutoProvision] Platform account provisioned: ${platformResult.platformEmail}`);
+      } catch (platformErr) {
+        console.warn("[AutoProvision] Platform provision skipped:", platformErr instanceof Error ? platformErr.message : platformErr);
+      }
     }
   }
 
@@ -2310,7 +2324,274 @@ app.post("/api/accounts/:id/provision-trading", requireAuth, requireRole("admin"
   });
 });
 
-// ─── PLATFORM USER PROXY (admin reads + actions on api.everwin.trade) ──────────
+/**
+ * Live check of the stored broker credentials: decodes the token expiry and
+ * makes a real authenticated call, so the admin sees the actual state instead
+ * of just "Configurado".
+ */
+app.get("/api/settings/test-broker", requireAuth, requireRole("admin"), async (_req, res) => {
+  const token = await getAdminToken();
+  if (!token) {
+    return res.json({ ok: false, stage: "token", message: "Nenhum token salvo. Cole o token do painel da corretora." });
+  }
+
+  let expiresAt = null;
+  let expired = false;
+  const parts = token.split(".");
+  if (parts.length === 3) {
+    try {
+      const claims = JSON.parse(Buffer.from(parts[1], "base64url").toString());
+      if (claims.exp) {
+        expiresAt = new Date(claims.exp * 1000).toISOString();
+        expired = claims.exp * 1000 < Date.now();
+      }
+    } catch {
+      // Not a readable JWT — the live call below is the real verdict.
+    }
+  }
+
+  if (expired) {
+    return res.json({
+      ok: false,
+      stage: "expired",
+      expiresAt,
+      message: "O token expirou. Pegue um novo no painel da corretora e salve aqui.",
+    });
+  }
+
+  try {
+    await fetchPlatformUser("connectivity-check");
+    return res.json({ ok: true, expiresAt, message: "Conexão com a corretora funcionando." });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Falha desconhecida";
+    // A 404 means we were authenticated and the fake user simply does not exist.
+    if (/404|not found/i.test(message)) {
+      return res.json({ ok: true, expiresAt, message: "Conexão com a corretora funcionando." });
+    }
+    if (/401|unauthor/i.test(message)) {
+      return res.json({ ok: false, stage: "unauthorized", expiresAt, message: "A corretora recusou o token (401). Ele expirou ou foi revogado." });
+    }
+    return res.json({ ok: false, stage: "network", expiresAt, message });
+  }
+});
+
+// ─── ACCOUNT POOL (pre-created broker accounts, assigned on approval) ─────────
+
+const poolImportSchema = z.object({
+  accounts: z
+    .array(
+      z.object({
+        identifier: z.string().min(3),
+        username: z.string().min(3),
+        email: z.string().email(),
+        password: z.string().min(6),
+        planId: z.string().min(3),
+        accountSize: z.coerce.number().positive(),
+        currency: z.string().min(3).max(3),
+        platformUserId: z.string().optional().or(z.literal("")),
+      }),
+    )
+    .min(1)
+    .max(1000),
+});
+
+function mapPoolRow(row, includeSecret = false) {
+  return {
+    id: row.id,
+    identifier: row.identifier,
+    username: row.username,
+    email: row.email,
+    password: includeSecret ? readPoolSecret(row.platform_password_enc) : "••••••••",
+    planId: row.plan_id,
+    accountSize: Number(row.account_size),
+    currency: row.currency,
+    platformUserId: row.platform_user_id ?? undefined,
+    status: row.status,
+    assignedAccountId: row.assigned_account_id ?? undefined,
+    assignedAt: row.assigned_at ?? undefined,
+    notes: row.notes ?? undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function readPoolSecret(encrypted) {
+  try {
+    return decryptSecret(encrypted);
+  } catch {
+    return "";
+  }
+}
+
+app.get("/api/pool", requireAuth, requireRole("admin"), async (_req, res) => {
+  const rows = await many("SELECT * FROM pool_accounts ORDER BY plan_id ASC, identifier ASC");
+  const plans = await getPlans();
+
+  const stock = plans.map((plan) => {
+    const forPlan = rows.filter((row) => row.plan_id === plan.id);
+    return {
+      planId: plan.id,
+      planName: plan.name,
+      accountSize: plan.accountSize,
+      currency: plan.currency,
+      available: forPlan.filter((row) => row.status === "available").length,
+      assigned: forPlan.filter((row) => row.status === "assigned").length,
+      disabled: forPlan.filter((row) => row.status === "disabled").length,
+    };
+  });
+
+  res.json({ accounts: rows.map((row) => mapPoolRow(row, true)), stock });
+});
+
+app.post("/api/pool/import", requireAuth, requireRole("admin"), async (req, res) => {
+  const parsed = poolImportSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: "Invalid payload.", issues: parsed.error.flatten() });
+  }
+
+  const planIds = new Set((await getPlans()).map((plan) => plan.id));
+  const now = nowISO();
+  let inserted = 0;
+  let updated = 0;
+  const skipped = [];
+
+  for (const account of parsed.data.accounts) {
+    if (!planIds.has(account.planId)) {
+      skipped.push({ identifier: account.identifier, reason: `Plano desconhecido: ${account.planId}` });
+      continue;
+    }
+
+    const existing = await one("SELECT id, status FROM pool_accounts WHERE identifier = $1", [account.identifier]);
+
+    // Never touch an account already handed to a trader.
+    if (existing?.status === "assigned") {
+      skipped.push({ identifier: account.identifier, reason: "Já atribuída a um cliente" });
+      continue;
+    }
+
+    if (existing) {
+      await query(
+        `UPDATE pool_accounts SET
+           username = $1, email = $2, platform_password_enc = $3, plan_id = $4,
+           account_size = $5, currency = $6, platform_user_id = COALESCE(NULLIF($7,''), platform_user_id),
+           updated_at = $8
+         WHERE id = $9`,
+        [
+          account.username,
+          account.email,
+          encryptSecret(account.password),
+          account.planId,
+          account.accountSize,
+          account.currency,
+          account.platformUserId ?? "",
+          now,
+          existing.id,
+        ],
+      );
+      updated += 1;
+      continue;
+    }
+
+    await query(
+      `INSERT INTO pool_accounts (
+         id, identifier, username, email, platform_password_enc, plan_id,
+         account_size, currency, platform_user_id, status, created_at, updated_at
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'available',$10,$10)`,
+      [
+        uid("pool"),
+        account.identifier,
+        account.username,
+        account.email,
+        encryptSecret(account.password),
+        account.planId,
+        account.accountSize,
+        account.currency,
+        account.platformUserId || null,
+        now,
+      ],
+    );
+    inserted += 1;
+  }
+
+  await audit(req.authUser.id, "IMPORT_POOL_ACCOUNTS", "system", "pool", { inserted, updated, skipped: skipped.length });
+  res.json({ ok: true, inserted, updated, skipped });
+});
+
+app.patch("/api/pool/:id", requireAuth, requireRole("admin"), async (req, res) => {
+  const parsed = z.object({ status: z.enum(["available", "disabled"]) }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ message: "Invalid payload." });
+
+  const row = await one("SELECT * FROM pool_accounts WHERE id = $1", [req.params.id]);
+  if (!row) return res.status(404).json({ message: "Pool account not found." });
+  if (row.status === "assigned") return res.status(409).json({ message: "Conta já atribuída — não pode mudar de status." });
+
+  await query("UPDATE pool_accounts SET status = $1, updated_at = $2 WHERE id = $3", [parsed.data.status, nowISO(), req.params.id]);
+  await audit(req.authUser.id, "UPDATE_POOL_ACCOUNT", "system", req.params.id, parsed.data);
+  res.json({ ok: true });
+});
+
+/**
+ * Takes the oldest available pool account for a plan and links it to a prop
+ * account, inside a transaction so two concurrent approvals never grab the same one.
+ */
+async function assignPoolAccount({ planId, propAccountId, actorUserId }) {
+  return withTransaction(async (trx) => {
+    const row = await trx.one(
+      `SELECT * FROM pool_accounts
+       WHERE plan_id = $1 AND status = 'available'
+       ORDER BY created_at ASC
+       LIMIT 1
+       FOR UPDATE SKIP LOCKED`,
+      [planId],
+    );
+    if (!row) return null;
+
+    await trx.query(
+      `UPDATE pool_accounts
+       SET status = 'assigned', assigned_account_id = $1, assigned_at = $2, updated_at = $2
+       WHERE id = $3`,
+      [propAccountId, nowISO(), row.id],
+    );
+
+    await trx.query(
+      `UPDATE accounts
+       SET platform_login = $1, platform_password_enc = $2, platform_email = $3,
+           platform_user_id = COALESCE($4, platform_user_id), updated_at = $5
+       WHERE id = $6`,
+      [row.username, row.platform_password_enc, row.email, row.platform_user_id, nowISO(), propAccountId],
+    );
+
+    void actorUserId;
+    return row;
+  });
+}
+
+app.post("/api/pool/assign", requireAuth, requireRole("admin"), async (req, res) => {
+  const parsed = z.object({ propAccountId: z.string().min(3) }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ message: "Invalid payload." });
+
+  const accountRow = await one("SELECT * FROM accounts WHERE id = $1", [parsed.data.propAccountId]);
+  if (!accountRow) return res.status(404).json({ message: "Account not found." });
+
+  const assigned = await assignPoolAccount({
+    planId: accountRow.plan_id,
+    propAccountId: accountRow.id,
+    actorUserId: req.authUser.id,
+  });
+
+  if (!assigned) {
+    return res.status(409).json({ message: "Sem contas disponíveis no estoque para este plano." });
+  }
+
+  await audit(req.authUser.id, "ASSIGN_POOL_ACCOUNT", "account", accountRow.id, {
+    identifier: assigned.identifier,
+    planId: accountRow.plan_id,
+  });
+
+  res.json({ ok: true, identifier: assigned.identifier, email: assigned.email });
+});
+
+// ─── PLATFORM USER PROXY (admin reads + actions on api.everwin.capital) ────────
 
 app.get("/api/platform-users/:id", requireAuth, requireRole("admin"), async (req, res) => {
   try {

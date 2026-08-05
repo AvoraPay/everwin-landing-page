@@ -19,6 +19,7 @@ import { usePropSystem } from "../../context";
 import {
   fetchAccountEventsApi,
   fetchUserSubmissionsApi,
+  assignPoolAccountApi,
   provisionTradingPlatformApi,
 } from "../../api";
 import {
@@ -309,9 +310,25 @@ export function AdminAccountsPage() {
     setSaveFeedback("Conta salva com sucesso.");
   };
 
+  /**
+   * Stock first: assigning a pooled account needs no broker token, so it works
+   * even when the 24h token is stale. Live provisioning is the fallback.
+   */
   const handleProvision = async (account: PropAccount) => {
     setProvisioningId(account.id);
+    setSaveFeedback(null);
     try {
+      try {
+        const pooled = await assignPoolAccountApi(account.id);
+        setSaveFeedback(`Conta ${pooled.identifier} atribuída do estoque (${pooled.email}).`);
+        await runRulesEvaluation();
+        return;
+      } catch (poolError) {
+        const message = poolError instanceof Error ? poolError.message : "";
+        // Anything other than an empty pool is a real failure worth showing.
+        if (!/estoque|dispon/i.test(message)) throw poolError;
+      }
+
       const result = await provisionTradingPlatformApi(account.id);
       setProvisionResult({
         accountId: account.id,
@@ -319,6 +336,8 @@ export function AdminAccountsPage() {
         tempPass: result.temporaryPassword,
       });
       await runRulesEvaluation();
+    } catch (error) {
+      setSaveFeedback(error instanceof Error ? error.message : "Falha ao provisionar a conta.");
     } finally {
       setProvisioningId(null);
     }

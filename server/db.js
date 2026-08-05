@@ -269,6 +269,29 @@ async function createSchema() {
       created_at TEXT NOT NULL
     );
   `);
+
+  // Stock of pre-created broker accounts, assigned to buyers at approval time.
+  await exec(`
+    CREATE TABLE IF NOT EXISTS pool_accounts (
+      id TEXT PRIMARY KEY,
+      identifier TEXT NOT NULL UNIQUE,
+      username TEXT NOT NULL,
+      email TEXT NOT NULL,
+      platform_password_enc TEXT NOT NULL,
+      plan_id TEXT NOT NULL,
+      account_size INTEGER NOT NULL,
+      currency TEXT NOT NULL DEFAULT 'BRL',
+      platform_user_id TEXT,
+      status TEXT NOT NULL DEFAULT 'available' CHECK (status IN ('available','assigned','disabled')),
+      assigned_account_id TEXT,
+      assigned_at TEXT,
+      notes TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_pool_accounts_status_plan ON pool_accounts(status, plan_id);
+  `);
 }
 
 async function seedUsers() {

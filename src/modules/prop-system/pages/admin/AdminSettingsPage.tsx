@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { ArrowDown, ArrowRight, Check, Copy, Eye, EyeOff, Info, Loader2, Lock, Save, Shield, Unlock, Zap, Webhook } from "lucide-react";
+import { ArrowDown, ArrowRight, Check, Copy, Eye, EyeOff, Info, Loader2, Lock, PlugZap, Save, Shield, TriangleAlert, Unlock, Zap, Webhook } from "lucide-react";
 import { Button } from "../../../../components/ui/button";
 import { Input } from "../../../../components/ui/input";
 import { Textarea } from "../../../../components/ui/textarea";
 import { cn } from "../../../../lib/utils";
-import { fetchSettingsApi, updateSettingsApi } from "../../api";
-import type { SystemSetting } from "../../types";
+import { fetchSettingsApi, testBrokerConnectionApi, updateSettingsApi } from "../../api";
+import type { BrokerConnectionStatus, SystemSetting } from "../../types";
 import {
   PortalPageHeader,
   PortalSection,
@@ -90,6 +90,20 @@ export function AdminSettingsPage() {
   const [feedbackVagas, setFeedbackVagas] = useState<{ ok: boolean; message: string } | null>(null);
   const [testingWebhook, setTestingWebhook] = useState(false);
   const [webhookResult, setWebhookResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [testingBroker, setTestingBroker] = useState(false);
+  const [brokerStatus, setBrokerStatus] = useState<BrokerConnectionStatus | null>(null);
+
+  const handleTestBroker = async () => {
+    setTestingBroker(true);
+    setBrokerStatus(null);
+    try {
+      setBrokerStatus(await testBrokerConnectionApi());
+    } catch (err) {
+      setBrokerStatus({ ok: false, message: err instanceof Error ? err.message : "Falha ao testar a conexão." });
+    } finally {
+      setTestingBroker(false);
+    }
+  };
 
   useEffect(() => {
     fetchSettingsApi()
@@ -176,16 +190,53 @@ export function AdminSettingsPage() {
           {/* SECTION 1: API Credentials */}
           <PortalSection
             title={<span className="flex items-center gap-2"><SectionNumber n={1} /> <Shield className="h-4 w-4" /> Credenciais da API de Trading</span>}
-            description="Conexão entre esta plataforma e api.everwin.trade. Usadas para criar contas, alterar saldos e bloquear usuários na corretora."
+            description="Conexão entre esta plataforma e api.everwin.capital. Usadas para criar contas, alterar saldos e bloquear usuários na corretora. O token dura 24h — use Testar Conexão para saber se ainda está válido."
           >
             <div className="space-y-5">
               <SecretField label="Bearer Token do Admin" description="Token JWT para autenticar chamadas à API da corretora." value={bearer} onChange={setBearer} placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." stored={stored.everwin_admin_bearer} />
               <SecretField label="Segredo do Webhook" description="Chave compartilhada para validar webhooks recebidos." value={webhookSecret} onChange={setWebhookSecret} placeholder="meu-segredo-webhook..." stored={stored.everwin_webhook_secret} />
+              {brokerStatus && (
+                <PortalSurface
+                  tone="subtle"
+                  padding="sm"
+                  className={cn(
+                    brokerStatus.ok
+                      ? "border-emerald-200 bg-emerald-50 dark:border-emerald-500/20 dark:bg-emerald-500/10"
+                      : "border-red-200 bg-red-50 dark:border-red-500/20 dark:bg-red-500/10",
+                  )}
+                >
+                  <div className="flex items-start gap-2.5">
+                    {brokerStatus.ok ? (
+                      <PlugZap className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    ) : (
+                      <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
+                    )}
+                    <div>
+                      <p className={cn("text-sm font-medium", brokerStatus.ok ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400")}>
+                        {brokerStatus.message}
+                      </p>
+                      {brokerStatus.expiresAt && (
+                        <p className="mt-1 text-xs text-slate-600 dark:text-white/50">
+                          Token expira em {new Date(brokerStatus.expiresAt).toLocaleString("pt-BR")}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </PortalSurface>
+              )}
+
               {feedbackApi && <InlineFeedback feedback={feedbackApi} />}
-              <Button type="button" onClick={() => void handleSaveApi()} disabled={savingApi} className="h-10 w-full rounded-xl bg-emerald-600 text-white hover:bg-emerald-500 dark:bg-emerald-600 dark:hover:bg-emerald-500">
-                {savingApi ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                Salvar Credenciais
-              </Button>
+
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <Button type="button" variant="outline" onClick={() => void handleTestBroker()} disabled={testingBroker} className="h-10 rounded-xl border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 dark:border-white/[0.07] dark:bg-[#171a23] dark:text-white/70 dark:hover:border-white/[0.12] dark:hover:text-white">
+                  {testingBroker ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlugZap className="h-4 w-4" />}
+                  Testar Conexão
+                </Button>
+                <Button type="button" onClick={() => void handleSaveApi()} disabled={savingApi} className="h-10 rounded-xl bg-emerald-600 text-white hover:bg-emerald-500 dark:bg-emerald-600 dark:hover:bg-emerald-500">
+                  {savingApi ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  Salvar Credenciais
+                </Button>
+              </div>
             </div>
           </PortalSection>
 

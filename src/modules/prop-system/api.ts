@@ -2,7 +2,11 @@ import type {
   AccountStatus,
   AdminSubmissionListItem,
   AuditLog,
+  BrokerConnectionStatus,
   ClientSubmissionItem,
+  PoolAccount,
+  PoolImportRow,
+  PoolStockRow,
   CreateAccountInput,
   CreateClientInput,
   CreateSubmissionInput,
@@ -416,6 +420,28 @@ export async function updateSettingsApi(settings: Record<string, string>): Promi
     method: "PUT",
     body: JSON.stringify(settings),
   });
+}
+
+export async function fetchPoolApi(): Promise<{ accounts: PoolAccount[]; stock: PoolStockRow[] }> {
+  return request<{ accounts: PoolAccount[]; stock: PoolStockRow[] }>("/pool", { method: "GET" });
+}
+
+export async function importPoolApi(
+  accounts: PoolImportRow[],
+): Promise<{ ok: true; inserted: number; updated: number; skipped: Array<{ identifier: string; reason: string }> }> {
+  return request("/pool/import", { method: "POST", body: JSON.stringify({ accounts }) });
+}
+
+export async function updatePoolAccountApi(id: string, status: "available" | "disabled"): Promise<void> {
+  await request<{ ok: true }>(`/pool/${id}`, { method: "PATCH", body: JSON.stringify({ status }) });
+}
+
+export async function assignPoolAccountApi(propAccountId: string): Promise<{ ok: true; identifier: string; email: string }> {
+  return request("/pool/assign", { method: "POST", body: JSON.stringify({ propAccountId }) });
+}
+
+export async function testBrokerConnectionApi(): Promise<BrokerConnectionStatus> {
+  return request<BrokerConnectionStatus>("/settings/test-broker", { method: "GET" });
 }
 
 export async function fetchAccountEventsApi(accountId: string): Promise<TradeEvent[]> {

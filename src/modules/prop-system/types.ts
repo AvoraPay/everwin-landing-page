@@ -304,6 +304,52 @@ export interface ClientSubmissionItem {
   } | null;
 }
 
+export interface PoolAccount {
+  id: string;
+  identifier: string;
+  username: string;
+  email: string;
+  password: string;
+  planId: string;
+  accountSize: number;
+  currency: string;
+  platformUserId?: string;
+  status: "available" | "assigned" | "disabled";
+  assignedAccountId?: string;
+  assignedAt?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PoolStockRow {
+  planId: string;
+  planName: string;
+  accountSize: number;
+  currency: string;
+  available: number;
+  assigned: number;
+  disabled: number;
+}
+
+export interface PoolImportRow {
+  identifier: string;
+  username: string;
+  email: string;
+  password: string;
+  planId: string;
+  accountSize: number;
+  currency: string;
+  platformUserId?: string;
+}
+
+export interface BrokerConnectionStatus {
+  ok: boolean;
+  stage?: string;
+  expiresAt?: string | null;
+  message: string;
+}
+
 export interface SystemSetting {
   set: boolean;
   preview: string;
