@@ -25,16 +25,20 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT_DIR = path.join(__dirname, "out");
 const DOMAIN = process.env.PROP_ACCOUNT_DOMAIN ?? "everwin.capital";
 
-/** Mirrors the `plans` table in production. */
+/**
+ * Mirrors the `plans` table in production.
+ * `code` is the account identifier prefix — plan readable straight from the
+ * e-mail address. USD plans carry a `u` so they never collide with BRL.
+ */
 const PLANS = [
-  { id: "plan_brl_25k", slug: "brl25k", accountSize: 25000, currency: "BRL" },
-  { id: "plan_brl_50k", slug: "brl50k", accountSize: 50000, currency: "BRL" },
-  { id: "plan_brl_100k", slug: "brl100k", accountSize: 100000, currency: "BRL" },
-  { id: "plan_brl_150k", slug: "brl150k", accountSize: 150000, currency: "BRL" },
-  { id: "plan_usd_12k", slug: "usd12k", accountSize: 12500, currency: "USD" },
-  { id: "plan_usd_25k", slug: "usd25k", accountSize: 25000, currency: "USD" },
-  { id: "plan_usd_50k", slug: "usd50k", accountSize: 50000, currency: "USD" },
-  { id: "plan_usd_75k", slug: "usd75k", accountSize: 75000, currency: "USD" },
+  { id: "plan_brl_25k", code: "ewp25k", accountSize: 25000, currency: "BRL" },
+  { id: "plan_brl_50k", code: "ewp50k", accountSize: 50000, currency: "BRL" },
+  { id: "plan_brl_100k", code: "ewp100k", accountSize: 100000, currency: "BRL" },
+  { id: "plan_brl_150k", code: "ewp150k", accountSize: 150000, currency: "BRL" },
+  { id: "plan_usd_12k", code: "ewpu12k", accountSize: 12500, currency: "USD" },
+  { id: "plan_usd_25k", code: "ewpu25k", accountSize: 25000, currency: "USD" },
+  { id: "plan_usd_50k", code: "ewpu50k", accountSize: 50000, currency: "USD" },
+  { id: "plan_usd_75k", code: "ewpu75k", accountSize: 75000, currency: "USD" },
 ];
 
 function arg(name, fallback) {
@@ -77,6 +81,7 @@ const selected = PLANS.filter((plan) =>
   only === "all" ? true : only === "brl" ? plan.currency === "BRL" : plan.currency === "USD",
 );
 
+
 if (selected.length === 0) throw new Error(`--only=${only} matched no plans (use brl, usd or all)`);
 
 const importRows = [];
@@ -85,8 +90,9 @@ const credentialRows = [];
 for (const plan of selected) {
   for (let i = 0; i < perPlan; i += 1) {
     const seq = String(start + i).padStart(3, "0");
-    const identifier = `EWP-${plan.slug.toUpperCase()}-${seq}`;
-    const email = `ewp.${plan.slug}.${seq}@${DOMAIN}`;
+    const username = `${plan.code}${seq}`;
+    const identifier = username.toUpperCase();
+    const email = `${username}@${DOMAIN}`;
     const password = generatePassword();
 
     // Columns accepted by the broker importer. `name` is required, so the
@@ -102,6 +108,7 @@ for (const plan of selected) {
 
     credentialRows.push({
       identifier,
+      username,
       email,
       password,
       planId: plan.id,
@@ -120,7 +127,7 @@ writeFileSync(
 
 writeFileSync(
   path.join(OUT_DIR, "prop-pool-credentials.csv"),
-  toCsv(["identifier", "email", "password", "planId", "accountSize", "currency"], credentialRows),
+  toCsv(["identifier", "username", "email", "password", "planId", "accountSize", "currency"], credentialRows),
 );
 
 const byCurrency = selected.reduce((acc, plan) => {
