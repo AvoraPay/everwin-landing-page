@@ -179,7 +179,16 @@ app.use(cors(
         credentials: true,
       },
 ));
-app.use(express.json({ limit: "1mb" }));
+// Keep the untouched bytes around: webhook signatures are computed over the raw
+// body, and re-serialising the parsed JSON would change them.
+app.use(
+  express.json({
+    limit: "1mb",
+    verify: (req, _res, buf) => {
+      req.rawBody = buf;
+    },
+  }),
+);
 app.use(morgan("dev"));
 
 // ensureDb AFTER cors/helmet so OPTIONS preflight never fails with 500
@@ -307,6 +316,7 @@ const SETTINGS_META = {
   everwin_admin_bearer: { sensitive: true },
   everwin_webhook_secret: { sensitive: true },
   novus_webhook_secret: { sensitive: true },
+  novus_signing_secret: { sensitive: true },
   prop_vacancies_locked: { sensitive: false, defaultValue: "false" },
   prop_vacancies_message: { sensitive: false, defaultValue: DEFAULT_VACANCIES_MESSAGE },
 };
@@ -2484,6 +2494,60 @@ async function resolveApplicationFromPayload(payload, amount) {
   return { row: null, via: "", email };
 }
 
+function timingSafeEqualString(a, b) {
+  const bufA = Buffer.from(String(a ?? ""), "utf8");
+  const bufB = Buffer.from(String(b ?? ""), "utf8");
+  return bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB);
+}
+
+/**
+ * Verifies a Novus signature header against the whsec_ signing secret.
+ * Providers differ in how they sign, so every common shape is accepted:
+ * Svix-style (`id.timestamp.body`) and a plain HMAC over the raw body, with the
+ * key read both as raw text and as base64, in hex and base64 digests.
+ */
+function verifyNovusSignature(req, signingSecret) {
+  const headerNames = ["svix-signature", "x-signature", "x-webhook-signature", "x-hub-signature-256", "signature"];
+  const headerName = headerNames.find((name) => req.headers[name]);
+  if (!headerName) return { present: false, valid: false };
+
+  const header = String(req.headers[headerName]);
+  const body = req.rawBody ? req.rawBody.toString("utf8") : JSON.stringify(req.body ?? {});
+  const bare = signingSecret.replace(/^whsec_/, "");
+
+  const keys = [Buffer.from(bare, "utf8"), Buffer.from(signingSecret, "utf8")];
+  try {
+    const decoded = Buffer.from(bare, "base64");
+    if (decoded.length > 0) keys.push(decoded);
+  } catch {
+    // Not base64 — the text keys above already cover it.
+  }
+
+  const svixId = req.headers["svix-id"];
+  const svixTimestamp = req.headers["svix-timestamp"];
+  const contents = [body];
+  if (svixId && svixTimestamp) contents.push(`${svixId}.${svixTimestamp}.${body}`);
+
+  // The header may be bare, prefixed ("sha256=", "v1,") or a space separated list.
+  const candidates = header
+    .split(/[\s,]+/)
+    .map((part) => part.replace(/^(v\d+|sha256)[=,]?/i, "").trim())
+    .filter(Boolean);
+
+  for (const key of keys) {
+    for (const content of contents) {
+      const hmac = crypto.createHmac("sha256", key).update(content, "utf8").digest();
+      const hex = hmac.toString("hex");
+      const b64 = hmac.toString("base64");
+      if (candidates.some((candidate) => timingSafeEqualString(candidate, hex) || timingSafeEqualString(candidate, b64))) {
+        return { present: true, valid: true };
+      }
+    }
+  }
+
+  return { present: true, valid: false };
+}
+
 app.post("/api/webhooks/novus", webhookLimiter, async (req, res) => {
   // Novus only lets us configure a URL, so the shared secret travels in the
   // query string; a header is still accepted for clients that support one.
@@ -2493,13 +2557,21 @@ app.post("/api/webhooks/novus", webhookLimiter, async (req, res) => {
     (req.headers.authorization?.startsWith("Bearer ") ? req.headers.authorization.slice(7) : "");
 
   const expected = await getSystemSettingValue("novus_webhook_secret");
-  if (!expected) {
+  const signingSecret = await getSystemSettingValue("novus_signing_secret");
+
+  if (!expected && !signingSecret) {
     return res.status(503).json({ message: "Webhook secret not configured. Set it in Admin > Configurações." });
   }
 
-  const a = Buffer.from(String(provided ?? ""), "utf8");
-  const b = Buffer.from(expected, "utf8");
-  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+  // Novus signs the request when a whsec_ secret is configured. A valid
+  // signature is proof enough on its own; otherwise the URL token must match.
+  const signature = signingSecret ? verifyNovusSignature(req, signingSecret) : { present: false, valid: false };
+
+  if (signature.present && !signature.valid) {
+    return res.status(401).json({ message: "Invalid webhook signature." });
+  }
+
+  if (!signature.valid && (!expected || !timingSafeEqualString(provided, expected))) {
     return res.status(401).json({ message: "Invalid webhook secret." });
   }
 
@@ -2613,6 +2685,56 @@ app.post("/api/webhooks/novus", webhookLimiter, async (req, res) => {
     });
     console.error("[Novus webhook]", error);
     return res.status(200).json({ received: true, matched: true, processed: false });
+  }
+});
+
+/**
+ * Fires a simulated Novus event at our own receiver so the admin can prove the
+ * whole path works. `dryRun` keeps it from approving a real application.
+ */
+app.post("/api/webhooks/novus/test", requireAuth, requireRole("admin"), async (req, res) => {
+  const parsed = z
+    .object({
+      submissionCode: z.string().optional(),
+      dryRun: z.boolean().optional(),
+    })
+    .safeParse(req.body ?? {});
+  if (!parsed.success) return res.status(400).json({ message: "Invalid payload." });
+
+  const token = await getSystemSettingValue("novus_webhook_secret");
+  if (!token) return res.status(400).json({ message: "Configure o segredo do webhook antes de testar." });
+
+  const dryRun = parsed.data.dryRun !== false;
+  let application = null;
+  if (parsed.data.submissionCode) {
+    const row = await one("SELECT * FROM applications WHERE upper(submission_code) = upper($1)", [parsed.data.submissionCode]);
+    if (!row) return res.status(404).json({ message: "Inscrição não encontrada." });
+    application = mapApplicationRow(row);
+  }
+
+  const payload = {
+    event: "transaction.paid",
+    transaction_id: `test_${createShortCode()}`,
+    amount: application?.amount ?? 1,
+    currency: application?.currency ?? "BRL",
+    checkout_url: resolveCheckoutUrl(application?.planId ?? "plan_brl_25k"),
+    customer: {
+      email: dryRun ? `teste-webhook-${createShortCode()}@everwin.capital` : application?.email,
+      name: application?.fullName ?? "Teste Everwin",
+    },
+  };
+
+  const url = `${config.appBaseUrl}/api/webhooks/novus?token=${encodeURIComponent(token)}`;
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const body = await response.json().catch(() => ({}));
+    return res.json({ ok: response.ok, status: response.status, url, dryRun, sent: payload, received: body });
+  } catch (error) {
+    return res.status(502).json({ message: error instanceof Error ? error.message : "Falha ao chamar o webhook." });
   }
 });
 
