@@ -2438,14 +2438,36 @@ function findFirst(payload, keys) {
   return "";
 }
 
-/** Novus sends cents on some payloads and units on others — normalise to units. */
-function normalizeAmount(raw) {
+/**
+ * Novus reports money in cents (`total: 39700` for R$ 397,00), but other shapes
+ * send units. Both readings are returned so the caller can accept either.
+ */
+function amountReadings(raw) {
   const numeric = Number(String(raw ?? "").replace(/[^\d.-]/g, ""));
-  if (!Number.isFinite(numeric) || numeric <= 0) return 0;
-  return numeric;
+  if (!Number.isFinite(numeric) || numeric <= 0) return { units: 0, readings: [] };
+  return { units: numeric / 100, readings: [numeric / 100, numeric] };
 }
 
-async function resolveApplicationFromPayload(payload, amount) {
+function amountMatches(readings, expected) {
+  return readings.some((value) => Math.abs(value - Number(expected)) < 0.01);
+}
+
+/**
+ * Novus never says which product was bought, so the paid amount is what
+ * identifies the plan. Several plans can share a fee, so every hit is returned.
+ */
+async function detectPlansByAmount(readings) {
+  if (readings.length === 0) return [];
+  const plans = await getPlans();
+  return plans.filter((plan) => amountMatches(readings, plan.fee));
+}
+
+function describePlans(plans) {
+  if (plans.length === 0) return "";
+  return plans.map((plan) => `${plan.name} (${plan.currency} ${plan.fee})`).join(" ou ");
+}
+
+async function resolveApplicationFromPayload(payload, amountReadingsList = []) {
   const haystack = flattenValues(payload).join(" ");
 
   // 1. Our own submission code, if the provider echoes it back.
@@ -2480,13 +2502,15 @@ async function resolveApplicationFromPayload(payload, amount) {
     if (row) return { row, via: "document", email };
   }
 
-  // 4. Last resort: a single pending application for exactly this amount.
-  if (amount > 0) {
+  // 4. Last resort: exactly one pending application for this amount, in either
+  // reading (Novus sends cents, other providers send units).
+  for (const value of amountReadingsList) {
+    if (!(value > 0)) continue;
     const rows = await many(
       `SELECT * FROM applications
        WHERE amount = $1 AND payment_status <> 'approved' AND status NOT IN ('cancelled','rejected')
        ORDER BY created_at DESC LIMIT 2`,
-      [Math.round(amount)],
+      [Math.round(value)],
     );
     if (rows.length === 1) return { row: rows[0], via: "amount", email };
   }
@@ -2584,8 +2608,8 @@ app.post("/api/webhooks/novus", webhookLimiter, async (req, res) => {
     query(
       `INSERT INTO payment_webhook_events (
          id, provider, event_type, external_id, status, matched_application_id,
-         amount, currency, customer_email, note, payload, created_at
-       ) VALUES ($1,'novus',$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+         amount, currency, customer_email, note, detected_plan_id, detected_plan_name, payload, created_at
+       ) VALUES ($1,'novus',$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
        ON CONFLICT DO NOTHING`,
       [
         uid("whk"),
@@ -2597,17 +2621,12 @@ app.post("/api/webhooks/novus", webhookLimiter, async (req, res) => {
         extra.currency ?? null,
         extra.email ?? null,
         extra.note ?? null,
+        extra.planId ?? null,
+        extra.planName ?? null,
         JSON.stringify(payload).slice(0, 20000),
         nowISO(),
       ],
     );
-
-  // Only the prop checkout links matter — the same Novus account sells other things.
-  const isPropLink = PROP_LINK_SLUGS.some((slug) => haystack.includes(slug));
-  if (!isPropLink) {
-    await recordEvent("ignored", { note: "Evento fora dos links de prop trading." });
-    return res.status(200).json({ received: true, ignored: true, reason: "not a prop link" });
-  }
 
   if (!/paid|approved|confirm|succe/i.test(eventType)) {
     await recordEvent("ignored", { note: `Evento ${eventType} não é de pagamento confirmado.` });
@@ -2622,20 +2641,55 @@ app.post("/api/webhooks/novus", webhookLimiter, async (req, res) => {
     if (seen) return res.status(200).json({ received: true, duplicate: true });
   }
 
-  const rawAmount = findFirst(payload, ["amount", "value", "total", "paid_amount", "amount_paid"]);
-  const amount = normalizeAmount(rawAmount);
+  const rawAmount = findFirst(payload, ["total", "amount", "value", "paid_amount", "amount_paid"]);
+  const { units: amount, readings } = amountReadings(rawAmount);
   const currency = findFirst(payload, ["currency", "currency_code"]) || "BRL";
 
-  const { row, via, email } = await resolveApplicationFromPayload(payload, amount);
+  // Identify the plan purely from the amount paid — that is the only product
+  // signal Novus gives us, and the admin needs it spelled out.
+  const detectedPlans = await detectPlansByAmount(readings);
+  const planInfo = {
+    planId: detectedPlans.length === 1 ? detectedPlans[0].id : null,
+    planName: detectedPlans.length > 0 ? describePlans(detectedPlans) : null,
+  };
+  const planLabel = detectedPlans.length > 0 ? `Plano identificado pelo valor: ${planInfo.planName}.` : "";
+
+  const { row, via, email } = await resolveApplicationFromPayload(payload, readings);
 
   if (!row) {
-    await recordEvent("unmatched", {
+    const note =
+      detectedPlans.length > 0
+        ? `${planLabel} Nenhuma inscrição pendente casou com o comprador — aprove manualmente na tela de Inscrições.`
+        : `Valor pago (${currency} ${amount.toFixed(2)}) não corresponde a nenhum plano cadastrado. Provavelmente é outro produto da conta Novus.`;
+
+    await recordEvent(detectedPlans.length > 0 ? "unmatched" : "ignored", {
       amount,
       currency,
       email,
-      note: "Pagamento de link prop sem inscrição correspondente. Aprovar manualmente.",
+      note,
+      ...planInfo,
     });
-    return res.status(200).json({ received: true, matched: false });
+    return res.status(200).json({
+      received: true,
+      matched: false,
+      detectedPlan: planInfo.planName ?? null,
+    });
+  }
+
+  // Novus does not tell us which product was bought, so the fee is the guard:
+  // a buyer who also has a pending prop application never gets it approved by
+  // an unrelated purchase of a different value.
+  const linkedToPropLink = PROP_LINK_SLUGS.some((slug) => haystack.includes(slug));
+  if (!linkedToPropLink && !amountMatches(readings, row.amount)) {
+    await recordEvent("unmatched", {
+      applicationId: row.id,
+      amount,
+      currency,
+      email,
+      ...planInfo,
+      note: `Valor pago (${currency} ${amount.toFixed(2)}) diferente da taxa da inscrição ${row.submission_code} (${row.currency} ${row.amount}). ${planLabel} Não aprovado automaticamente.`,
+    });
+    return res.status(200).json({ received: true, matched: false, reason: "amount mismatch" });
   }
 
   try {
@@ -2666,7 +2720,8 @@ app.post("/api/webhooks/novus", webhookLimiter, async (req, res) => {
       amount,
       currency,
       email,
-      note: `Casado por ${via}.`,
+      ...planInfo,
+      note: `Casado por ${via}. ${planLabel}`.trim(),
     });
     await audit(null, "NOVUS_PAYMENT_APPROVED", "application", row.id, {
       submissionCode: row.submission_code,
@@ -2681,6 +2736,7 @@ app.post("/api/webhooks/novus", webhookLimiter, async (req, res) => {
       amount,
       currency,
       email,
+      ...planInfo,
       note: error instanceof Error ? error.message : "Falha ao processar",
     });
     console.error("[Novus webhook]", error);
@@ -2773,6 +2829,8 @@ app.get("/api/webhooks/novus/events", requireAuth, requireRole("admin"), async (
       amount: row.amount === null ? null : Number(row.amount),
       currency: row.currency,
       customerEmail: row.customer_email,
+      detectedPlanId: row.detected_plan_id ?? undefined,
+      detectedPlanName: row.detected_plan_name ?? undefined,
       note: row.note,
       // The raw body is what tells the admin exactly what Novus sends.
       payload: row.payload,

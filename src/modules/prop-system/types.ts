@@ -354,6 +354,9 @@ export interface PaymentWebhookEvent {
   amount: number | null;
   currency: string | null;
   customerEmail: string | null;
+  /** Plan inferred from the amount paid — the only product signal Novus sends. */
+  detectedPlanId?: string;
+  detectedPlanName?: string;
   note: string | null;
   payload: string;
   createdAt: string;

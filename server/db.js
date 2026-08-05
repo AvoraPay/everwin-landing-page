@@ -287,6 +287,9 @@ async function createSchema() {
       created_at TEXT NOT NULL
     );
 
+    ALTER TABLE payment_webhook_events ADD COLUMN IF NOT EXISTS detected_plan_id TEXT;
+    ALTER TABLE payment_webhook_events ADD COLUMN IF NOT EXISTS detected_plan_name TEXT;
+
     CREATE INDEX IF NOT EXISTS idx_payment_webhook_status ON payment_webhook_events(status, created_at DESC);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_payment_webhook_external
       ON payment_webhook_events(provider, external_id)

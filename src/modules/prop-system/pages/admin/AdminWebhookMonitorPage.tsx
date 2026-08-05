@@ -261,8 +261,13 @@ export function AdminWebhookMonitorPage() {
                           <span className="font-mono text-xs text-slate-500 dark:text-white/40">{event.eventType}</span>
                           {event.amount ? (
                             <span className="text-sm font-semibold text-slate-900 dark:text-white">
-                              {event.currency} {event.amount.toLocaleString("pt-BR")}
+                              {event.currency} {event.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                             </span>
+                          ) : null}
+                          {event.detectedPlanName ? (
+                            <PortalStatusPill tone="info">{event.detectedPlanName}</PortalStatusPill>
+                          ) : event.amount ? (
+                            <PortalStatusPill tone="neutral">valor fora dos planos</PortalStatusPill>
                           ) : null}
                         </div>
                         <p className="mt-1 truncate text-xs text-slate-500 dark:text-white/40">
