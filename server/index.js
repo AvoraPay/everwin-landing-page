@@ -2739,18 +2739,43 @@ app.post("/api/webhooks/novus/test", requireAuth, requireRole("admin"), async (r
 });
 
 app.get("/api/webhooks/novus/events", requireAuth, requireRole("admin"), async (_req, res) => {
-  const rows = await many("SELECT * FROM payment_webhook_events ORDER BY created_at DESC LIMIT 100");
+  const rows = await many(
+    `SELECT e.*, a.submission_code, a.full_name
+     FROM payment_webhook_events e
+     LEFT JOIN applications a ON a.id = e.matched_application_id
+     ORDER BY e.created_at DESC LIMIT 100`,
+  );
+
+  const counts = await one(
+    `SELECT
+       COUNT(*) FILTER (WHERE status = 'processed')::int AS processed,
+       COUNT(*) FILTER (WHERE status = 'unmatched')::int AS unmatched,
+       COUNT(*) FILTER (WHERE status = 'ignored')::int   AS ignored,
+       COUNT(*) FILTER (WHERE status = 'failed')::int    AS failed
+     FROM payment_webhook_events`,
+  );
+
   res.json({
+    summary: {
+      processed: counts?.processed ?? 0,
+      unmatched: counts?.unmatched ?? 0,
+      ignored: counts?.ignored ?? 0,
+      failed: counts?.failed ?? 0,
+    },
     events: rows.map((row) => ({
       id: row.id,
       eventType: row.event_type,
       externalId: row.external_id,
       status: row.status,
       matchedApplicationId: row.matched_application_id,
+      submissionCode: row.submission_code ?? undefined,
+      customerName: row.full_name ?? undefined,
       amount: row.amount === null ? null : Number(row.amount),
       currency: row.currency,
       customerEmail: row.customer_email,
       note: row.note,
+      // The raw body is what tells the admin exactly what Novus sends.
+      payload: row.payload,
       createdAt: row.created_at,
     })),
   });

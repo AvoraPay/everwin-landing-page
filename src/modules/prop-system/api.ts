@@ -4,6 +4,7 @@ import type {
   AuditLog,
   BrokerConnectionStatus,
   ClientSubmissionItem,
+  PaymentWebhookFeed,
   PoolAccount,
   PoolImportRow,
   PoolStockRow,
@@ -447,6 +448,19 @@ export async function updatePoolAccountApi(id: string, status: "available" | "di
 
 export async function assignPoolAccountApi(propAccountId: string): Promise<{ ok: true; identifier: string; email: string }> {
   return request("/pool/assign", { method: "POST", body: JSON.stringify({ propAccountId }) });
+}
+
+export async function fetchPaymentWebhookFeedApi(): Promise<PaymentWebhookFeed> {
+  return request<PaymentWebhookFeed>("/webhooks/novus/events", { method: "GET" });
+}
+
+export async function sendTestWebhookApi(input: { submissionCode?: string; dryRun?: boolean }): Promise<{
+  ok: boolean;
+  status: number;
+  received: unknown;
+  sent: unknown;
+}> {
+  return request("/webhooks/novus/test", { method: "POST", body: JSON.stringify(input) });
 }
 
 export async function testBrokerConnectionApi(): Promise<BrokerConnectionStatus> {

@@ -10,6 +10,7 @@ import {
   Menu,
   Moon,
   PackageOpen,
+  RadioTower,
   Settings2,
   ShieldCheck,
   Sun,
@@ -251,6 +252,7 @@ function getAdminNavigation(t: (key: string, fallback?: string) => string): Navi
         { to: "/prop/admin/submissions", label: "Inscrições", icon: BriefcaseBusiness },
         { to: "/prop/admin/accounts", label: "Contas de Operação", icon: WalletCards },
         { to: "/prop/admin/pool", label: "Estoque de Contas", icon: PackageOpen },
+        { to: "/prop/admin/payments", label: "Monitor de Pagamentos", icon: RadioTower },
       ],
     },
     {

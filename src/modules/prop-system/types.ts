@@ -343,6 +343,27 @@ export interface PoolImportRow {
   platformUserId?: string;
 }
 
+export interface PaymentWebhookEvent {
+  id: string;
+  eventType: string | null;
+  externalId: string | null;
+  status: "processed" | "unmatched" | "ignored" | "failed";
+  matchedApplicationId?: string | null;
+  submissionCode?: string;
+  customerName?: string;
+  amount: number | null;
+  currency: string | null;
+  customerEmail: string | null;
+  note: string | null;
+  payload: string;
+  createdAt: string;
+}
+
+export interface PaymentWebhookFeed {
+  summary: { processed: number; unmatched: number; ignored: number; failed: number };
+  events: PaymentWebhookEvent[];
+}
+
 export interface BrokerConnectionStatus {
   ok: boolean;
   stage?: string;

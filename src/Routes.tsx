@@ -46,6 +46,7 @@ import { AdminDashboardPage } from "./modules/prop-system/pages/admin/AdminDashb
 import { AdminAnalyticsPage } from "./modules/prop-system/pages/admin/AdminAnalyticsPage";
 import { AdminAccountsPage } from "./modules/prop-system/pages/admin/AdminAccountsPage";
 import { AdminPoolPage } from "./modules/prop-system/pages/admin/AdminPoolPage";
+import { AdminWebhookMonitorPage } from "./modules/prop-system/pages/admin/AdminWebhookMonitorPage";
 import { AdminSettingsPage } from "./modules/prop-system/pages/admin/AdminSettingsPage";
 import { AdminSubmissionsPage } from "./modules/prop-system/pages/admin/AdminSubmissionsPage";
 import { AdminUsersPage } from "./modules/prop-system/pages/admin/AdminUsersPage";
@@ -95,6 +96,7 @@ export default function AppRoutes() {
               <Route path="admin/submissions" element={<AdminSubmissionsPage />} />
               <Route path="admin/accounts" element={<AdminAccountsPage />} />
               <Route path="admin/pool" element={<AdminPoolPage />} />
+              <Route path="admin/payments" element={<AdminWebhookMonitorPage />} />
               <Route path="admin/analytics" element={<AdminAnalyticsPage />} />
               <Route path="admin/settings" element={<AdminSettingsPage />} />
             </Route>
