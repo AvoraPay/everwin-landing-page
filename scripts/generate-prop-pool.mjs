@@ -46,9 +46,14 @@ function arg(name, fallback) {
   return hit ? hit.split("=")[1] : fallback;
 }
 
-const perPlan = Number(arg("per-plan", "20"));
-const start = Number(arg("start", "1"));
-const only = String(arg("only", "all")).toLowerCase();
+/** Emits a single account, for validating the broker import before a full batch. */
+const single = process.argv.includes("--single");
+/** Omits the deposit column so the account is created with no balance. */
+const noBalance = single || process.argv.includes("--no-balance");
+
+const perPlan = single ? 1 : Number(arg("per-plan", "20"));
+const start = Number(arg("start", single ? "21" : "1"));
+const only = String(arg("only", single ? "brl" : "all")).toLowerCase();
 
 if (!Number.isInteger(perPlan) || perPlan < 1) throw new Error("--per-plan must be a positive integer");
 if (!Number.isInteger(start) || start < 1) throw new Error("--start must be a positive integer");
@@ -77,9 +82,10 @@ function toCsv(headers, rows) {
   return [headers.join(","), ...rows.map((row) => headers.map((h) => csvEscape(row[h])).join(","))].join("\n") + "\n";
 }
 
-const selected = PLANS.filter((plan) =>
+let selected = PLANS.filter((plan) =>
   only === "all" ? true : only === "brl" ? plan.currency === "BRL" : plan.currency === "USD",
 );
+if (single) selected = selected.slice(0, 1);
 
 
 if (selected.length === 0) throw new Error(`--only=${only} matched no plans (use brl, usd or all)`);
@@ -97,13 +103,17 @@ for (const plan of selected) {
 
     // Columns accepted by the broker importer. `name` is required, so the
     // identifier doubles as the account name — no personal data in the pool.
+    // `influencer` is what marks it as a marketing account on the broker.
     importRows.push({
       email,
       name: identifier,
+      phoneCountryCode: "55",
+      phone: "11900000000",
       active: "true",
       banned: "false",
       influencer: "true",
-      totalDepositAmount: plan.accountSize,
+      // Omitted entirely when the account must start with no balance.
+      totalDepositAmount: noBalance ? "" : plan.accountSize,
     });
 
     credentialRows.push({
@@ -120,13 +130,16 @@ for (const plan of selected) {
 
 mkdirSync(OUT_DIR, { recursive: true });
 
-writeFileSync(
-  path.join(OUT_DIR, "prop-pool-import.csv"),
-  toCsv(["email", "name", "active", "banned", "influencer", "totalDepositAmount"], importRows),
-);
+const importColumns = ["email", "name", "phoneCountryCode", "phone", "active", "banned", "influencer"];
+if (!noBalance) importColumns.push("totalDepositAmount");
+
+const importFile = single ? "prop-single-import.csv" : "prop-pool-import.csv";
+const credentialsFile = single ? "prop-single-credentials.csv" : "prop-pool-credentials.csv";
+
+writeFileSync(path.join(OUT_DIR, importFile), toCsv(importColumns, importRows));
 
 writeFileSync(
-  path.join(OUT_DIR, "prop-pool-credentials.csv"),
+  path.join(OUT_DIR, credentialsFile),
   toCsv(["identifier", "username", "email", "password", "planId", "accountSize", "currency"], credentialRows),
 );
 
@@ -137,9 +150,13 @@ const byCurrency = selected.reduce((acc, plan) => {
 
 console.log(`Contas geradas: ${importRows.length} (${perPlan} por plano × ${selected.length} planos)`);
 console.log(`Sequência: ${String(start).padStart(3, "0")} a ${String(start + perPlan - 1).padStart(3, "0")}`);
-for (const [currency, total] of Object.entries(byCurrency)) {
-  console.log(`Saldo total estocado em ${currency}: ${total.toLocaleString("pt-BR")}`);
+if (noBalance) {
+  console.log("Saldo: nenhum — a coluna de depósito não vai no CSV.");
+} else {
+  for (const [currency, total] of Object.entries(byCurrency)) {
+    console.log(`Saldo total estocado em ${currency}: ${total.toLocaleString("pt-BR")}`);
+  }
 }
 console.log(`\nArquivos em ${OUT_DIR}:`);
-console.log("  prop-pool-import.csv       → subir no admin da corretora");
-console.log("  prop-pool-credentials.csv  → senhas, NÃO compartilhar");
+console.log(`  ${importFile}`.padEnd(32) + " → subir no admin da corretora");
+console.log(`  ${credentialsFile}`.padEnd(32) + " → senhas, NÃO compartilhar");
