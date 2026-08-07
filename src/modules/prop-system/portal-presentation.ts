@@ -1,5 +1,5 @@
 import type { AccountAnalytics, AccountStatus, PaymentStatus, SubmissionStatus } from "./types";
-import { currencyBRL, getPropUiLanguage, statusToLabel } from "./rules";
+import { formatPropMoney, getPropUiLanguage, statusToLabel } from "./rules";
 
 export type PortalTone = "neutral" | "success" | "warning" | "danger" | "info";
 
@@ -88,8 +88,8 @@ export function getPaymentStatusMeta(status: PaymentStatus, language?: string) {
   };
 }
 
-export function formatSignedCurrency(value: number, language?: string) {
-  const abs = currencyBRL(Math.abs(value), language);
+export function formatSignedCurrency(value: number, language?: string, currency = "BRL") {
+  const abs = formatPropMoney(Math.abs(value), currency, language);
   if (value > 0) return `+${abs}`;
   if (value < 0) return `-${abs}`;
   return abs;

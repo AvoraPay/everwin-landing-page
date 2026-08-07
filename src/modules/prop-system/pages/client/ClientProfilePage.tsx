@@ -16,7 +16,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { cn } from "../../../../lib/utils";
 import { usePropSystem } from "../../context";
-import { buildAccountAnalytics, currencyBRL, formatPropDate, getPlanById } from "../../rules";
+import { buildAccountAnalytics, formatPropMoney, formatPropDate, getPlanById } from "../../rules";
 import {
   PortalPageHeader,
   PortalSection,
@@ -54,6 +54,7 @@ export function ClientProfilePage() {
     (e) => e.account.status === "failed_drawdown" || e.account.status === "failed_timeout",
   ).length;
   const consolidatedBalance = accountViews.reduce((s, e) => s + e.account.balance, 0);
+  const portfolioCurrency = accountViews[0]?.plan.currency ?? "BRL";
   const currentLang = LANGUAGES.find((l) => i18n.language.startsWith(l.code)) ?? LANGUAGES[0];
 
   return (
@@ -65,7 +66,7 @@ export function ClientProfilePage() {
         <PortalStatCard label="Total" value={accountViews.length} tone="neutral" icon={<Activity className="h-4 w-4" />} />
         <PortalStatCard label="Ativas" value={activeAccounts} tone="success" icon={<ShieldCheck className="h-4 w-4" />} />
         <PortalStatCard label="Concluídas" value={completedAccounts} tone="info" icon={<TrendingUp className="h-4 w-4" />} />
-        <PortalStatCard label="Saldo" value={currencyBRL(consolidatedBalance, i18n.language)} helper={failedAccounts > 0 ? `${failedAccounts} falha(s)` : undefined} tone="warning" icon={<Wallet className="h-4 w-4" />} />
+        <PortalStatCard label="Saldo" value={formatPropMoney(consolidatedBalance, portfolioCurrency, i18n.language)} helper={failedAccounts > 0 ? `${failedAccounts} falha(s)` : undefined} tone="warning" icon={<Wallet className="h-4 w-4" />} />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
@@ -134,7 +135,7 @@ export function ClientProfilePage() {
           <MiniStat icon={<Activity className="h-4 w-4 text-emerald-600" />} label="Ativas" value={activeAccounts} />
           <MiniStat icon={<CheckCircle2 className="h-4 w-4 text-sky-600" />} label="Concluídas" value={completedAccounts} />
           <MiniStat icon={<XCircle className="h-4 w-4 text-red-500" />} label="Falhas" value={failedAccounts} />
-          <MiniStat icon={<Wallet className="h-4 w-4 text-amber-600" />} label="Saldo total" value={currencyBRL(consolidatedBalance, i18n.language)} />
+          <MiniStat icon={<Wallet className="h-4 w-4 text-amber-600" />} label="Saldo total" value={formatPropMoney(consolidatedBalance, portfolioCurrency, i18n.language)} />
         </div>
       </PortalSection>
     </div>

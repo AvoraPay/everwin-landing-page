@@ -289,6 +289,17 @@ export interface ClientSubmissionItem {
   phone: string;
   country: string;
   city: string;
+  documentType?: string | null;
+  documentNumber?: string | null;
+  occupation?: string | null;
+  experience?: string | null;
+  session?: string | null;
+  riskPerDay?: string | null;
+  motivation?: string | null;
+  consistency?: string | null;
+  locale?: string | null;
+  amount?: number | null;
+  currency?: string | null;
   submittedAt: string;
   paidAt: string | null;
   reviewedAt: string | null;

@@ -18,7 +18,7 @@ import { cn } from "../../../../lib/utils";
 import { usePropSystem } from "../../context";
 import {
   buildAccountAnalytics,
-  currencyBRL,
+  formatPropMoney,
   formatPropDate,
   getPlanById,
 } from "../../rules";
@@ -65,6 +65,11 @@ export function ClientDashboardPage() {
       .sort((a, b) => b.analytics.progressScore - a.analytics.progressScore)[0] ??
     [...accountViews].sort((a, b) => b.account.updatedAt.localeCompare(a.account.updatedAt))[0] ??
     null;
+
+  // Currency follows the plan, not the interface language: a USD 75K account
+  // shown as "R$ 75.000" misstates the capital being traded.
+  const mainCurrency = mainView?.plan.currency ?? "BRL";
+  const portfolioCurrency = accountViews[0]?.plan.currency ?? "BRL";
 
   const alerts = accountViews.flatMap((entry) => {
     const out: Array<{ id: string; tone: "warning" | "success" | "info"; title: string; text: string }> = [];
@@ -119,7 +124,7 @@ export function ClientDashboardPage() {
         />
         <KpiCard
           label="Saldo Consolidado"
-          value={currencyBRL(consolidatedBalance, i18n.language)}
+          value={formatPropMoney(consolidatedBalance, portfolioCurrency, i18n.language)}
           icon={<Wallet className="h-5 w-5" />}
           tone="blue"
         />
@@ -187,8 +192,8 @@ export function ClientDashboardPage() {
               <PortalMetricList
                 inverse
                 items={[
-                  { label: "Saldo", value: currencyBRL(mainView.account.balance, i18n.language), hint: currencyBRL(mainView.account.initialBalance, i18n.language) },
-                  { label: "Hoje", value: formatSignedCurrency(mainView.account.todayPnl, i18n.language), hint: formatSignedPercent(mainView.account.initialBalance > 0 ? (mainView.account.todayPnl / mainView.account.initialBalance) * 100 : 0) },
+                  { label: "Saldo", value: formatPropMoney(mainView.account.balance, mainCurrency, i18n.language), hint: formatPropMoney(mainView.account.initialBalance, mainCurrency, i18n.language) },
+                  { label: "Hoje", value: formatSignedCurrency(mainView.account.todayPnl, i18n.language, mainCurrency), hint: formatSignedPercent(mainView.account.initialBalance > 0 ? (mainView.account.todayPnl / mainView.account.initialBalance) * 100 : 0) },
                   { label: "Progresso", value: `${mainView.analytics.progressScore.toFixed(0)}%`, hint: `${mainView.analytics.snapshot.profitPct.toFixed(2)}% PnL` },
                   { label: "Dias", value: `${mainView.account.daysTraded} / ${mainView.plan.minTradingDays}`, hint: `${Math.max(getDaysRemaining(mainView.account.endDate), 0)}d restantes` },
                 ]}
@@ -207,7 +212,7 @@ export function ClientDashboardPage() {
                   label: formatPropDate(p.date, i18n.language, { day: "2-digit", month: "2-digit" }),
                   value: p.balance,
                 }))}
-                valueFormatter={(v) => currencyBRL(v, i18n.language)}
+                valueFormatter={(v) => formatPropMoney(v, mainCurrency, i18n.language)}
               />
             </PortalSurface>
             <div className="flex items-center justify-center">
@@ -233,14 +238,14 @@ export function ClientDashboardPage() {
                 />
                 <RuleBar
                   label="Drawdown Máximo"
-                  current={currencyBRL(Math.max(mainView.analytics.snapshot.remainingDrawdownBeforeBreach, 0), i18n.language)}
+                  current={formatPropMoney(Math.max(mainView.analytics.snapshot.remainingDrawdownBeforeBreach, 0), mainCurrency, i18n.language)}
                   limit={`${mainView.plan.maxDrawdownPct}%`}
                   pct={Math.min(((mainView.plan.maxDrawdownPct / 100 * mainView.account.initialBalance - Math.max(mainView.analytics.snapshot.remainingDrawdownBeforeBreach, 0)) / (mainView.plan.maxDrawdownPct / 100 * mainView.account.initialBalance)) * 100, 100)}
                   tone="amber"
                 />
                 <RuleBar
                   label="Perda Diária"
-                  current={currencyBRL(Math.max(mainView.analytics.snapshot.remainingDailyLossBeforePause, 0), i18n.language)}
+                  current={formatPropMoney(Math.max(mainView.analytics.snapshot.remainingDailyLossBeforePause, 0), mainCurrency, i18n.language)}
                   limit={`${mainView.plan.dailyLossLimitPct}%`}
                   pct={Math.min(((mainView.plan.dailyLossLimitPct / 100 * mainView.account.initialBalance - Math.max(mainView.analytics.snapshot.remainingDailyLossBeforePause, 0)) / (mainView.plan.dailyLossLimitPct / 100 * mainView.account.initialBalance)) * 100, 100)}
                   tone={mainView.analytics.snapshot.isDailyLimitBreached ? "red" : "amber"}
@@ -270,7 +275,7 @@ export function ClientDashboardPage() {
                 <PortalMetricList
                   items={[
                     { label: "Risco", value: getRiskLabel(mainView.analytics, i18n.language) },
-                    { label: "Volatilidade", value: currencyBRL(mainView.analytics.pnlVolatility, i18n.language), hint: "StdDev diário" },
+                    { label: "Volatilidade", value: formatPropMoney(mainView.analytics.pnlVolatility, mainCurrency, i18n.language), hint: "StdDev diário" },
                     { label: "Projeção", value: mainView.analytics.projectedDaysToTarget ? `${mainView.analytics.projectedDaysToTarget}d` : "-", hint: "Para a meta" },
                     { label: "Prazo", value: `${Math.max(getDaysRemaining(mainView.account.endDate), 0)}d`, hint: formatPropDate(mainView.account.endDate, i18n.language) },
                   ]}
@@ -344,7 +349,7 @@ export function ClientDashboardPage() {
                       </td>
                       <td className="px-4 py-3.5 text-sm text-slate-600 dark:text-white/60">{entry.plan.name}</td>
                       <td className="px-4 py-3.5">
-                        <p className="text-sm font-semibold text-slate-900 dark:text-white">{currencyBRL(entry.account.balance, i18n.language)}</p>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">{formatPropMoney(entry.account.balance, entry.plan.currency ?? 'BRL', i18n.language)}</p>
                         <p className="text-xs text-slate-500 dark:text-white/40">{formatSignedCurrency(entry.account.todayPnl, i18n.language)}</p>
                       </td>
                       <td className="px-4 py-3.5 text-sm font-semibold text-slate-900 dark:text-white">{entry.analytics.everwinEdgeScore.toFixed(0)}</td>

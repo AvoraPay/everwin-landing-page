@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import { usePropSystem } from "../../context";
 import {
   buildAccountAnalytics,
-  currencyBRL,
+  formatPropMoney,
   formatPropDate,
   getPlanById,
 } from "../../rules";
@@ -71,6 +71,9 @@ export function ClientAccountsPage() {
   }
 
   const status = getAccountStatusMeta(selected.account.status, i18n.language);
+  // The plan defines the currency the account is denominated in — a USD plan
+  // must never be rendered in reais.
+  const planCurrency = selected.plan.currency ?? "BRL";
   const targetPct =
     selected.account.phase === 1
       ? selected.plan.profitTargetPhase1Pct
@@ -111,7 +114,7 @@ export function ClientAccountsPage() {
                     <PortalStatusPill tone={entryStatus.tone}>{entryStatus.label}</PortalStatusPill>
                   </div>
                   <div className={`mt-3 flex items-center justify-between text-xs ${entry.account.id === selected.account.id ? "text-slate-300" : "text-slate-500 dark:text-white/40"}`}>
-                    <span>{currencyBRL(entry.account.balance, i18n.language)}</span>
+                    <span>{formatPropMoney(entry.account.balance, entry.plan.currency ?? 'BRL', i18n.language)}</span>
                     <span>{entry.analytics.progressScore.toFixed(0)} / 100</span>
                   </div>
                 </button>
@@ -142,12 +145,12 @@ export function ClientAccountsPage() {
                 items={[
                   {
                     label: "Saldo",
-                    value: currencyBRL(selected.account.balance, i18n.language),
-                    hint: `Inicial ${currencyBRL(selected.account.initialBalance, i18n.language)}`,
+                    value: formatPropMoney(selected.account.balance, planCurrency, i18n.language),
+                    hint: `Inicial ${formatPropMoney(selected.account.initialBalance, planCurrency, i18n.language)}`,
                   },
                   {
                     label: "Hoje",
-                    value: formatSignedCurrency(selected.account.todayPnl, i18n.language),
+                    value: formatSignedCurrency(selected.account.todayPnl, i18n.language, planCurrency),
                     hint: formatSignedPercent(
                       selected.account.initialBalance > 0
                         ? (selected.account.todayPnl / selected.account.initialBalance) * 100
@@ -178,7 +181,7 @@ export function ClientAccountsPage() {
                 label: formatPropDate(point.date, i18n.language, { day: "2-digit", month: "2-digit" }),
                 value: point.balance,
               }))}
-              valueFormatter={(value) => currencyBRL(value, i18n.language)}
+              valueFormatter={(value) => formatPropMoney(value, planCurrency, i18n.language)}
             />
             <EdgeScoreDial score={selected.analytics.everwinEdgeScore} label="Score da Conta" />
           </div>
@@ -187,10 +190,10 @@ export function ClientAccountsPage() {
             <PortalSection title="Plano">
               <PortalMetricList
                 items={[
-                  { label: "Capital", value: currencyBRL(selected.account.initialBalance, i18n.language), hint: `Fase ${selected.account.phase}` },
-                  { label: "Meta", value: `${targetPct}%`, hint: currencyBRL(targetValue, i18n.language) },
-                  { label: "DD Máx", value: `${selected.plan.maxDrawdownPct}%`, hint: currencyBRL(maxDrawdownValue, i18n.language) },
-                  { label: "PD", value: `${selected.plan.dailyLossLimitPct}%`, hint: currencyBRL(dailyLossValue, i18n.language) },
+                  { label: "Capital", value: formatPropMoney(selected.account.initialBalance, planCurrency, i18n.language), hint: `Fase ${selected.account.phase}` },
+                  { label: "Meta", value: `${targetPct}%`, hint: formatPropMoney(targetValue, planCurrency, i18n.language) },
+                  { label: "DD Máx", value: `${selected.plan.maxDrawdownPct}%`, hint: formatPropMoney(maxDrawdownValue, planCurrency, i18n.language) },
+                  { label: "PD", value: `${selected.plan.dailyLossLimitPct}%`, hint: formatPropMoney(dailyLossValue, planCurrency, i18n.language) },
                   { label: "Dias Mín", value: `${selected.plan.minTradingDays}`, hint: `${selected.account.daysTraded} Operados` },
                   { label: "Duração", value: `${selected.plan.durationDays}d`, hint: `${daysRemaining} Restantes` },
                 ]}
@@ -203,13 +206,13 @@ export function ClientAccountsPage() {
                 <RuleProgress
                   label="Meta"
                   current={`${selected.analytics.snapshot.profitPct.toFixed(2)}%`}
-                  helper={currencyBRL(selected.account.balance - selected.account.initialBalance, i18n.language)}
+                  helper={formatPropMoney(selected.account.balance - selected.account.initialBalance, planCurrency, i18n.language)}
                   value={Math.min(selected.analytics.progressScore, 100)}
                   tone="success"
                 />
                 <RuleProgress
                   label="Drawdown"
-                  current={currencyBRL(Math.max(selected.analytics.snapshot.remainingDrawdownBeforeBreach, 0), i18n.language)}
+                  current={formatPropMoney(Math.max(selected.analytics.snapshot.remainingDrawdownBeforeBreach, 0), planCurrency, i18n.language)}
                   helper={getRiskLabel(selected.analytics, i18n.language)}
                   value={Math.min(
                     ((maxDrawdownValue - Math.max(selected.analytics.snapshot.remainingDrawdownBeforeBreach, 0)) / maxDrawdownValue) * 100,
@@ -219,7 +222,7 @@ export function ClientAccountsPage() {
                 />
                 <RuleProgress
                   label="PD"
-                  current={currencyBRL(Math.max(selected.analytics.snapshot.remainingDailyLossBeforePause, 0), i18n.language)}
+                  current={formatPropMoney(Math.max(selected.analytics.snapshot.remainingDailyLossBeforePause, 0), planCurrency, i18n.language)}
                   helper={selected.analytics.snapshot.isDailyLimitBreached ? "Atingido" : "OK"}
                   value={Math.min(
                     ((dailyLossValue - Math.max(selected.analytics.snapshot.remainingDailyLossBeforePause, 0)) / dailyLossValue) * 100,
@@ -254,7 +257,7 @@ export function ClientAccountsPage() {
                 items={[
                   { label: "Risco", value: getRiskLabel(selected.analytics, i18n.language), hint: `${getRiskTone(selected.analytics)}` },
                   { label: "Disciplina", value: `${selected.analytics.riskDisciplineScore.toFixed(0)} / 100`, hint: `${selected.analytics.consistencyScore.toFixed(0)} Consistência` },
-                  { label: "Volatilidade", value: currencyBRL(selected.analytics.pnlVolatility, i18n.language), hint: "StdDev diário" },
+                  { label: "Volatilidade", value: formatPropMoney(selected.analytics.pnlVolatility, planCurrency, i18n.language), hint: "StdDev diário" },
                   { label: "Projeção", value: selected.analytics.projectedDaysToTarget ? `${selected.analytics.projectedDaysToTarget}d` : "-", hint: "PnL Médio" },
                 ]}
                 columns={2}
@@ -295,7 +298,7 @@ export function ClientAccountsPage() {
                             {formatSignedCurrency(point.pnl, i18n.language)}
                           </span>
                         </td>
-                        <td className="px-3 py-4 text-sm text-slate-700 dark:text-white/70">{currencyBRL(point.balance, i18n.language)}</td>
+                        <td className="px-3 py-4 text-sm text-slate-700 dark:text-white/70">{formatPropMoney(point.balance, planCurrency, i18n.language)}</td>
                         <td className="px-3 py-4 pr-0 text-sm text-slate-500 dark:text-white/40">
                           {point.breachedDailyLimit
                             ? "PD Atingida"

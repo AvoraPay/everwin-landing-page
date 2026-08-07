@@ -17,13 +17,23 @@ export function getPropUiLocale(language?: string): string {
   return "en-US";
 }
 
-export function currencyBRL(value: number, language?: string): string {
+/**
+ * Formats an account value in the currency the plan is actually denominated in.
+ * A USD 75K account showing "R$ 75.000" is not a cosmetic slip — it misstates
+ * the capital the trader is operating, so currency is a required argument.
+ */
+export function formatPropMoney(value: number, currency: string, language?: string): string {
   return new Intl.NumberFormat(getPropUiLocale(language), {
     style: "currency",
-    currency: "BRL",
+    currency: currency || "BRL",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+/** @deprecated Use formatPropMoney with the plan currency. */
+export function currencyBRL(value: number, language?: string): string {
+  return formatPropMoney(value, "BRL", language);
 }
 
 export function formatPropDate(
