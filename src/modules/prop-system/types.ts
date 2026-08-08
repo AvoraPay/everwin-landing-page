@@ -192,8 +192,23 @@ export interface PublicSubmissionBundle {
   accounts: PropAccount[];
   loginUrl: string;
   canAccessPortal: boolean;
+  /** True once a portal user exists — the password itself never travels here. */
+  hasPortalPassword?: boolean;
   vacanciesLocked?: boolean;
   vacanciesMessage?: string;
+}
+
+/** Returned only after the applicant proves the email is his. */
+export interface SubmissionCredentials {
+  email: string;
+  phone: string | null;
+  document: string | null;
+  portalLogin: string | null;
+  portalPassword: string | null;
+  /** available | changed_by_user | unreadable | none */
+  passwordState: string;
+  loginUrl: string;
+  accounts: Array<{ accountId: string; platformLogin: string }>;
 }
 
 export interface PublicSubmissionsConfig {
@@ -315,6 +330,13 @@ export interface ClientSubmissionItem {
   } | null;
 }
 
+export interface AccountDailyFeed {
+  accountId: string;
+  initialBalance: number;
+  balance: number;
+  days: DailyPerformancePoint[];
+}
+
 export interface PoolAccount {
   id: string;
   identifier: string;
@@ -389,6 +411,33 @@ export interface SystemSetting {
   set: boolean;
   preview: string;
   updatedAt?: string;
+}
+
+export type EmailLocale = "pt" | "en" | "es";
+
+/** One notification the platform can send, as described by GET /api/email-events. */
+export interface EmailEventSetting {
+  kind: string;
+  label: string;
+  description: string;
+  /** Transactional delivery (credentials, OTP): no switch exists server-side. */
+  alwaysOn: boolean;
+  /** The settings key the switch writes to, or null when the event is alwaysOn. */
+  enabledKey: string | null;
+  /** Whether the event is on when nothing was ever saved. */
+  defaultEnabled: boolean;
+  enabled: boolean;
+  noteKey: string;
+  note: string;
+}
+
+export interface EmailTestResult {
+  ok: boolean;
+  message: string;
+  providerMessageId?: string | null;
+  /** The From/Reply-To the recipient actually saw, resolved from the saved settings. */
+  from?: string;
+  replyTo?: string;
 }
 
 export interface CreateSubmissionInput {

@@ -15,37 +15,31 @@ export function createShortCode(prefix = "") {
   return `${prefix}${shortId()}`;
 }
 
-export function createSubmissionCodeFromDocument(documentNumber, country) {
-  const isBrazil = ["brazil", "brasil"].includes((country ?? "").trim().toLowerCase());
-  const digits = (documentNumber ?? "").replace(/\D/g, "");
-
-  if (isBrazil && digits.length === 11) {
-    const checkDigit = calculateCpfCheckDigit(digits);
-    return `EW-${digits.slice(0, 6)}-${digits.slice(6, 11)}-${checkDigit}`;
-  }
-
-  const hash = digits || shortId().replace(/[^0-9]/g, "").slice(0, 10);
-  const suffix = shortId().slice(0, 4);
-  return `EW-${hash.slice(0, 8)}-${suffix}`.toUpperCase();
+/**
+ * The tracking code for a submission.
+ *
+ * It used to be built from the applicant's document number — for a Brazilian CPF
+ * the code WAS the CPF, so anyone holding a CPF could open that person's
+ * application page. The code is now unguessable random, and the arguments are
+ * kept only so callers do not change: nothing from them reaches the output.
+ */
+export function createSubmissionCodeFromDocument() {
+  return `EW-${randomFrom(CODE_ALPHABET, 5)}-${randomFrom(CODE_ALPHABET, 5)}`;
 }
 
-function calculateCpfCheckDigit(cpfDigits) {
-  let sum = 0;
-  for (let i = 0; i < 10; i++) {
-    sum += parseInt(cpfDigits[i], 10) * (10 - i);
+const CODE_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+
+/** Uniform, bias-free draw from a real CSPRNG. */
+function randomFrom(alphabet, length) {
+  let output = "";
+  for (let index = 0; index < length; index += 1) {
+    output += alphabet[crypto.randomInt(alphabet.length)];
   }
-  let remainder = (sum * 10) % 11;
-  if (remainder === 10) remainder = 0;
-  return String(remainder);
+  return output;
 }
 
 export function createOtpCode(length = 6) {
-  const digits = "0123456789";
-  let output = "";
-  for (let index = 0; index < length; index += 1) {
-    output += digits[Math.floor(Math.random() * digits.length)];
-  }
-  return output;
+  return randomFrom("0123456789", length);
 }
 
 export function createTempPassword(length = 14) {
@@ -56,18 +50,11 @@ export function createTempPassword(length = 14) {
   const all = upper + lower + digits + special;
 
   // Guarantee at least one of each category
-  const pick = (s) => s[Math.floor(Math.random() * s.length)];
-  const guaranteed = [pick(upper), pick(lower), pick(digits), pick(special)];
+  const guaranteed = [randomFrom(upper, 1), randomFrom(lower, 1), randomFrom(digits, 1), randomFrom(special, 1)];
 
-  let output = "";
-  for (let index = 0; index < length - guaranteed.length; index += 1) {
-    output += all[Math.floor(Math.random() * all.length)];
-  }
-
-  // Insert guaranteed chars at random positions
-  const arr = output.split("");
+  const arr = randomFrom(all, Math.max(0, length - guaranteed.length)).split("");
   for (const ch of guaranteed) {
-    arr.splice(Math.floor(Math.random() * (arr.length + 1)), 0, ch);
+    arr.splice(crypto.randomInt(arr.length + 1), 0, ch);
   }
   return arr.join("");
 }

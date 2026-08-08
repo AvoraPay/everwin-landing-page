@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Check, Copy, Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Reveal } from "../components/Reveal";
-import { fetchSubmissionByCodeApi } from "../modules/prop-system/api";
+import { cn } from "../lib/utils";
+import { fetchSubmissionByCodeApi, revealSubmissionCredentialsApi } from "../modules/prop-system/api";
 import { normalizeAppLanguage } from "../lib/language";
 import { statusToLabel } from "../modules/prop-system/rules";
-import type { PublicSubmissionBundle, SubmissionStatus } from "../modules/prop-system/types";
+import type { PublicSubmissionBundle, SubmissionCredentials, SubmissionStatus } from "../modules/prop-system/types";
 
 function formatMoney(value: number, currency: string, language: string) {
   const locale = language.startsWith("pt") ? "pt-BR" : language.startsWith("es") ? "es-ES" : "en-US";
@@ -64,6 +66,23 @@ const COPY = {
     status: "Status",
     legal: "Atenção: submissões duplicadas não geram nova compra. Se você já possui esse código, continue acompanhando por aqui.",
     retry: "Tentar novamente",
+    showData: "Mostrar dados pessoais",
+    hideData: "Ocultar dados pessoais",
+    revealTitle: "Ver meus dados e a senha do portal",
+    revealDesc: "Seus dados aparecem ocultos porque esta página abre por link. Confirme o e-mail usado na inscrição para liberá-los.",
+    revealPlaceholder: "E-mail usado na inscrição",
+    revealAction: "Liberar dados",
+    revealBusy: "Verificando...",
+    revealCancel: "Cancelar",
+    credentialsTitle: "Dados de acesso ao portal",
+    credentialsHint: "Guarde estes dados. Você pode alterar a senha depois de entrar.",
+    fieldPortal: "Portal",
+    fieldEmail: "E-mail",
+    fieldPassword: "Senha",
+    copy: "Copiar",
+    copied: "Copiado",
+    passwordChanged: "Você já definiu uma senha própria. Se esqueceu, use \"Esqueci minha senha\" na tela de login.",
+    passwordUnavailable: "A senha não está disponível aqui. Use \"Esqueci minha senha\" na tela de login.",
   },
   en: {
     badge: "Submission Tracking",
@@ -105,6 +124,23 @@ const COPY = {
     status: "Status",
     legal: "Important: duplicate submissions do not create a new purchase. If you already have this code, keep tracking from here.",
     retry: "Try again",
+    showData: "Show personal data",
+    hideData: "Hide personal data",
+    revealTitle: "Show my data and portal password",
+    revealDesc: "Your data is hidden because this page opens from a link. Confirm the email used on the application to unlock it.",
+    revealPlaceholder: "Email used on the application",
+    revealAction: "Unlock data",
+    revealBusy: "Checking...",
+    revealCancel: "Cancel",
+    credentialsTitle: "Portal access details",
+    credentialsHint: "Keep these safe. You can change the password after signing in.",
+    fieldPortal: "Portal",
+    fieldEmail: "Email",
+    fieldPassword: "Password",
+    copy: "Copy",
+    copied: "Copied",
+    passwordChanged: "You already set your own password. If you forgot it, use \"Forgot password\" on the login screen.",
+    passwordUnavailable: "The password is not available here. Use \"Forgot password\" on the login screen.",
   },
   es: {
     badge: "Seguimiento de Solicitud",
@@ -146,6 +182,23 @@ const COPY = {
     status: "Estado",
     legal: "Importante: las solicitudes duplicadas no generan una nueva compra. Si ya tiene este código, continúe el seguimiento desde aquí.",
     retry: "Intentar nuevamente",
+    showData: "Mostrar datos personales",
+    hideData: "Ocultar datos personales",
+    revealTitle: "Ver mis datos y la contraseña del portal",
+    revealDesc: "Tus datos aparecen ocultos porque esta página se abre por enlace. Confirma el correo usado en la inscripción para liberarlos.",
+    revealPlaceholder: "Correo usado en la inscripción",
+    revealAction: "Liberar datos",
+    revealBusy: "Verificando...",
+    revealCancel: "Cancelar",
+    credentialsTitle: "Datos de acceso al portal",
+    credentialsHint: "Guarda estos datos. Puedes cambiar la contraseña después de entrar.",
+    fieldPortal: "Portal",
+    fieldEmail: "Correo",
+    fieldPassword: "Contraseña",
+    copy: "Copiar",
+    copied: "Copiado",
+    passwordChanged: "Ya definiste tu propia contraseña. Si la olvidaste, usa \"Olvidé mi contraseña\" en la pantalla de inicio de sesión.",
+    passwordUnavailable: "La contraseña no está disponible aquí. Usa \"Olvidé mi contraseña\" en la pantalla de inicio de sesión.",
   },
 } as const;
 
@@ -198,6 +251,16 @@ export default function PropSubmissionStatusPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // The submission code travels in a URL and is guessable, so the server sends
+  // this page nothing but masked contact data. Confirming the application email
+  // is the applicant's proof of ownership — and the only way to see the rest.
+  const [credentials, setCredentials] = useState<SubmissionCredentials | null>(null);
+  const [challengeOpen, setChallengeOpen] = useState(false);
+  const [challengeEmail, setChallengeEmail] = useState("");
+  const [challengeBusy, setChallengeBusy] = useState(false);
+  const [challengeError, setChallengeError] = useState<string | null>(null);
+  const revealed = credentials !== null;
+
   const code = params.get("id") ?? "";
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -225,6 +288,29 @@ export default function PropSubmissionStatusPage() {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [fetchBundle]);
 
+  const submitChallenge = useCallback(async () => {
+    const email = challengeEmail.trim();
+    if (!email) return;
+    setChallengeBusy(true);
+    setChallengeError(null);
+    try {
+      const result = await revealSubmissionCredentialsApi(code, email);
+      setCredentials(result);
+      setChallengeOpen(false);
+      setChallengeEmail("");
+    } catch (err) {
+      setChallengeError(err instanceof Error ? err.message : copy.notFound);
+    } finally {
+      setChallengeBusy(false);
+    }
+  }, [challengeEmail, code, copy.notFound]);
+
+  const hideData = useCallback(() => {
+    setCredentials(null);
+    setChallengeOpen(false);
+    setChallengeError(null);
+  }, []);
+
   const timelineItems = useMemo(() => {
     if (!bundle) return [];
     return [
@@ -236,6 +322,7 @@ export default function PropSubmissionStatusPage() {
   }, [bundle, copy, i18n.language, lang]);
 
   const hasCheckoutLink = Boolean(bundle?.payment?.checkoutUrl);
+  const portalUrl = credentials?.loginUrl ?? bundle?.loginUrl ?? `${window.location.origin}/prop/login`;
 
   return (
     <div className="min-h-screen bg-[linear-gradient(187deg,rgb(246,247,249)_-24%,rgb(224,227,235)_100%)] px-4 pb-24 pt-[120px] md:pt-[150px]">
@@ -339,6 +426,46 @@ export default function PropSubmissionStatusPage() {
                     <div className="mt-6 rounded-xl border border-sky-400/20 bg-sky-50 p-5">
                       <p className="font-bricolage_grotesque text-xl font-bold text-slate-900">{copy.accessReady}</p>
                       <p className="mt-2 font-bricolage_grotesque text-sm leading-6 text-slate-600">{copy.accessReadyDesc}</p>
+                      {credentials ? (
+                        <div className="mt-5 rounded-xl border border-slate-200 bg-white p-5">
+                          <div className="flex items-center gap-2">
+                            <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                            <p className="font-bricolage_grotesque text-sm font-bold text-slate-900">
+                              {copy.credentialsTitle}
+                            </p>
+                          </div>
+
+                          <div className="mt-4 space-y-2">
+                            <CredentialRow label={copy.fieldPortal} value={portalUrl} copyLabel={copy.copy} copiedLabel={copy.copied} />
+                            <CredentialRow
+                              label={copy.fieldEmail}
+                              value={credentials.portalLogin ?? credentials.email}
+                              copyLabel={copy.copy}
+                              copiedLabel={copy.copied}
+                            />
+                            {credentials.portalPassword ? (
+                              <CredentialRow
+                                label={copy.fieldPassword}
+                                value={credentials.portalPassword}
+                                mono
+                                copyLabel={copy.copy}
+                                copiedLabel={copy.copied}
+                              />
+                            ) : (
+                              <p className="rounded-lg bg-amber-50 px-3 py-2 font-bricolage_grotesque text-xs leading-5 text-amber-800">
+                                {credentials.passwordState === "changed_by_user"
+                                  ? copy.passwordChanged
+                                  : copy.passwordUnavailable}
+                              </p>
+                            )}
+                          </div>
+
+                          <p className="mt-3 font-bricolage_grotesque text-xs leading-5 text-slate-500">
+                            {copy.credentialsHint}
+                          </p>
+                        </div>
+                      ) : null}
+
                       <div className="mt-4 flex flex-wrap items-center gap-3">
                         <Link
                           to="/prop/login"
@@ -346,10 +473,15 @@ export default function PropSubmissionStatusPage() {
                         >
                           {copy.goLogin}
                         </Link>
-                        {bundle.user ? (
-                          <span className="font-bricolage_grotesque text-sm text-slate-600">
-                            {copy.portalLogin}: <strong>{bundle.user.email}</strong>
-                          </span>
+                        {!credentials ? (
+                          <button
+                            type="button"
+                            onClick={() => setChallengeOpen(true)}
+                            className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 px-5 py-3 font-bricolage_grotesque text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:text-slate-900"
+                          >
+                            <Eye className="h-4 w-4" />
+                            {copy.revealTitle}
+                          </button>
                         ) : null}
                       </div>
                     </div>
@@ -371,7 +503,14 @@ export default function PropSubmissionStatusPage() {
                           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                             <div>
                               <p className="font-bricolage_grotesque text-xs uppercase tracking-[0.12em] text-slate-500">{copy.accountId}</p>
-                              <p className="mt-1 font-bricolage_grotesque text-sm font-semibold text-slate-900">{account.accountId}</p>
+                              <p
+                                className={cn(
+                                  "mt-1 font-bricolage_grotesque text-sm font-semibold text-slate-900 transition-all duration-200",
+                                  !revealed && "select-none blur-[5px]",
+                                )}
+                              >
+                                {account.accountId}
+                              </p>
                             </div>
                             <div>
                               <p className="font-bricolage_grotesque text-xs uppercase tracking-[0.12em] text-slate-500">{copy.platformLogin}</p>
@@ -395,15 +534,64 @@ export default function PropSubmissionStatusPage() {
             <div className="space-y-6">
               <Reveal delay={90}>
                 <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
-                  <h2 className="font-bricolage_grotesque text-2xl font-bold text-slate-900">{copy.summary}</h2>
+                  <div className="flex items-start justify-between gap-3">
+                    <h2 className="font-bricolage_grotesque text-2xl font-bold text-slate-900">{copy.summary}</h2>
+                    <button
+                      type="button"
+                      onClick={() => (revealed ? hideData() : setChallengeOpen((open) => !open))}
+                      aria-pressed={revealed}
+                      title={revealed ? copy.hideData : copy.showData}
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-400 transition hover:border-slate-300 hover:text-slate-700"
+                    >
+                      {revealed ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      <span className="sr-only">{revealed ? copy.hideData : copy.showData}</span>
+                    </button>
+                  </div>
+
+                  {challengeOpen && !revealed ? (
+                    <div className="mb-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="font-bricolage_grotesque text-xs leading-5 text-slate-600">{copy.revealDesc}</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <input
+                          type="email"
+                          value={challengeEmail}
+                          onChange={(event) => setChallengeEmail(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") void submitChallenge();
+                          }}
+                          placeholder={copy.revealPlaceholder}
+                          autoComplete="email"
+                          className="h-10 min-w-0 flex-1 rounded-xl border border-slate-300 bg-white px-3 font-bricolage_grotesque text-sm text-slate-900 outline-none transition focus:border-slate-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void submitChallenge()}
+                          disabled={challengeBusy || !challengeEmail.trim()}
+                          className="inline-flex h-10 items-center gap-2 rounded-xl bg-slate-900 px-4 font-bricolage_grotesque text-sm font-semibold text-white transition disabled:opacity-40"
+                        >
+                          {challengeBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                          {challengeBusy ? copy.revealBusy : copy.revealAction}
+                        </button>
+                      </div>
+                      {challengeError ? (
+                        <p className="mt-2 font-bricolage_grotesque text-xs text-red-600">{challengeError}</p>
+                      ) : null}
+                    </div>
+                  ) : null}
+
                   <div className="mt-5 space-y-4 font-bricolage_grotesque text-sm text-slate-700">
                     <SummaryRow label={copy.plan} value={bundle.plan?.name ?? bundle.application.planId} />
                     <SummaryRow label={copy.amount} value={formatMoney(bundle.application.amount, bundle.application.currency, i18n.language)} />
-                    <SummaryRow label={copy.email} value={bundle.application.email} />
-                    <SummaryRow label={copy.phone} value={bundle.application.phone} />
+                    <SummaryRow label={copy.email} value={credentials?.email ?? bundle.application.email} />
+                    <SummaryRow label={copy.phone} value={credentials?.phone ?? bundle.application.phone} />
                     <SummaryRow
                       label={bundle.application.documentType ?? copy.cpf}
-                      value={bundle.application.documentNumber ?? bundle.application.cpf ?? "-"}
+                      value={
+                        credentials?.document ??
+                        bundle.application.documentNumber ??
+                        bundle.application.cpf ??
+                        "-"
+                      }
                     />
                     <SummaryRow label={copy.submittedAt} value={formatDate(bundle.application.submittedAt, i18n.language)} />
                   </div>
@@ -504,6 +692,59 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-3">
       <span className="text-slate-500">{label}</span>
       <span className="text-right font-semibold text-slate-900">{value}</span>
+    </div>
+  );
+}
+
+/** One credential, readable and copyable — the whole point of the reveal. */
+function CredentialRow({
+  label,
+  value,
+  mono,
+  copyLabel,
+  copiedLabel,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  copyLabel: string;
+  copiedLabel: string;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      // Clipboard is blocked in some embedded browsers; the value is on screen.
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+      <span className="w-16 shrink-0 font-bricolage_grotesque text-[11px] uppercase tracking-[0.12em] text-slate-500">
+        {label}
+      </span>
+      <span
+        className={cn(
+          "min-w-0 flex-1 select-all truncate text-sm font-semibold text-slate-900",
+          mono ? "font-mono" : "font-bricolage_grotesque",
+        )}
+        title={value}
+      >
+        {value}
+      </span>
+      <button
+        type="button"
+        onClick={() => void handleCopy()}
+        title={copied ? copiedLabel : copyLabel}
+        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-white hover:text-slate-700"
+      >
+        {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+        <span className="sr-only">{copied ? copiedLabel : copyLabel}</span>
+      </button>
     </div>
   );
 }

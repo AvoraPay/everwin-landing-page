@@ -1,14 +1,21 @@
 import "dotenv/config";
+import { randomBytes } from "node:crypto";
 
 const isProduction = process.env.NODE_ENV === "production";
 
-const DEFAULT_ACCESS_SECRET = "dev-everwin-access-secret-change-me";
-const DEFAULT_REFRESH_SECRET = "dev-everwin-refresh-secret-change-me";
-const DEFAULT_DATA_SECRET = "dev-everwin-data-secret-change-me";
+// A published constant is a signing key anyone can use. These fall back to a
+// value that is random per process instead: development still runs without a
+// .env, but a token forged against the source tree never verifies anywhere.
+const DEFAULT_ACCESS_SECRET = randomBytes(48).toString("hex");
+const DEFAULT_REFRESH_SECRET = randomBytes(48).toString("hex");
+const DEFAULT_DATA_SECRET = randomBytes(48).toString("hex");
 
-if (isProduction) {
+// NODE_ENV alone is not a reliable signal of "this is the real deployment", so
+// any Vercel runtime counts too. Booting a hosted instance on throwaway keys
+// would silently invalidate every session on each cold start.
+if (isProduction || process.env.VERCEL) {
   if (!process.env.JWT_ACCESS_SECRET || !process.env.JWT_REFRESH_SECRET || !process.env.PROP_DATA_SECRET) {
-    throw new Error("Missing required security env vars in production: JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, PROP_DATA_SECRET");
+    throw new Error("Missing required security env vars: JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, PROP_DATA_SECRET");
   }
 }
 
@@ -49,7 +56,11 @@ export const config = {
   databasePoolUrl: env("DATABASE_POOL_URL"),
   databaseSsl: env("PROP_DATABASE_SSL", "true") !== "false",
   resendApiKey: env("RESEND_API_KEY"),
-  resendFrom: env("RESEND_FROM_EMAIL", "Everwin Prop <prop@everwin.trade>"),
+  // Must be a domain verified in the Resend account — everwin.capital is the
+  // only one there, so everwin.trade would be rejected at send time.
+  resendFrom: env("RESEND_FROM_EMAIL", "Everwin Prop <prop@everwin.capital>"),
+  emailLogoUrl: env("EMAIL_LOGO_URL", "https://i.postimg.cc/RFLkLvK0/everwin-logo.png"),
+  emailReplyTo: env("EMAIL_REPLY_TO", ""),
   supportEmail: env("SUPPORT_EMAIL", "support@everwin.capital"),
   stripeSecretKey: env("STRIPE_SECRET_KEY"),
   stripeWebhookSecret: env("STRIPE_WEBHOOK_SECRET"),

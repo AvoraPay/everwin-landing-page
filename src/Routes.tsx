@@ -48,12 +48,10 @@ import { AdminAccountsPage } from "./modules/prop-system/pages/admin/AdminAccoun
 import { AdminPoolPage } from "./modules/prop-system/pages/admin/AdminPoolPage";
 import { AdminWebhookMonitorPage } from "./modules/prop-system/pages/admin/AdminWebhookMonitorPage";
 import { AdminSettingsPage } from "./modules/prop-system/pages/admin/AdminSettingsPage";
+import { AdminEmailSettingsPage } from "./modules/prop-system/pages/admin/AdminEmailSettingsPage";
 import { AdminSubmissionsPage } from "./modules/prop-system/pages/admin/AdminSubmissionsPage";
 import { AdminUsersPage } from "./modules/prop-system/pages/admin/AdminUsersPage";
-import { ClientDashboardPage } from "./modules/prop-system/pages/client/ClientDashboardPage";
-import { ClientAccountsPage } from "./modules/prop-system/pages/client/ClientAccountsPage";
-import { ClientProfilePage } from "./modules/prop-system/pages/client/ClientProfilePage";
-import { ClientSubmissionsPage } from "./modules/prop-system/pages/client/ClientSubmissionsPage";
+import { ClientPortalPage } from "./modules/prop-system/pages/client/ClientPortalPage";
 import { PropNotFoundPage } from "./modules/prop-system/pages/PropNotFoundPage";
 
 export default function AppRoutes() {
@@ -99,13 +97,16 @@ export default function AppRoutes() {
               <Route path="admin/payments" element={<AdminWebhookMonitorPage />} />
               <Route path="admin/analytics" element={<AdminAnalyticsPage />} />
               <Route path="admin/settings" element={<AdminSettingsPage />} />
+              <Route path="admin/emails" element={<AdminEmailSettingsPage />} />
             </Route>
 
             <Route element={<RequireRole role="client" />}>
-              <Route path="client/dashboard" element={<ClientDashboardPage />} />
-              <Route path="client/accounts" element={<ClientAccountsPage />} />
-              <Route path="client/profile" element={<ClientProfilePage />} />
-              <Route path="client/submissions" element={<ClientSubmissionsPage />} />
+              <Route path="client" element={<ClientPortalPage />} />
+              {/* Old deep links keep working — they now land on the one page. */}
+              <Route path="client/dashboard" element={<Navigate to="/prop/client" replace />} />
+              <Route path="client/accounts" element={<Navigate to="/prop/client" replace />} />
+              <Route path="client/profile" element={<Navigate to="/prop/client" replace />} />
+              <Route path="client/submissions" element={<Navigate to="/prop/client" replace />} />
             </Route>
           </Route>
         </Route>

@@ -10,3 +10,6 @@ server/data/*.db-wal
 
 # Pool de contas prop: contem senhas em texto puro
 scripts/out
+
+# Credencial de admin rotacionada localmente
+.admin-credentials.local

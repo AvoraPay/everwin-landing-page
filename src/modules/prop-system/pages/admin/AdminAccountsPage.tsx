@@ -57,6 +57,7 @@ import type { AccountStatus, PropAccount, TradeEvent } from "../../types";
 import { useTheme } from "../../theme";
 import { EdgeScoreDial } from "../components/charts/EdgeScoreDial";
 import { InteractiveLineChart } from "../components/charts/InteractiveLineChart";
+import { DailyResultsPanel } from "./DailyResultsPanel";
 
 type StatusFilter = "all" | AccountStatus;
 type UserSubmission = { id: string; submissionCode: string; email: string; status: string; createdAt: string };
@@ -902,6 +903,13 @@ export function AdminAccountsPage() {
                 </div>
               )}
             </PortalSection>
+
+            <DailyResultsPanel
+              account={selectedAccount.account}
+              plan={selectedAccount.plan}
+              language={i18n.language}
+              onChanged={() => void runRulesEvaluation()}
+            />
           </div>
         ) : null}
       </PortalDrawer>

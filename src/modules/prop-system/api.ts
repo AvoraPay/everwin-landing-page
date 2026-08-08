@@ -5,18 +5,23 @@ import type {
   BrokerConnectionStatus,
   ClientSubmissionItem,
   PaymentWebhookFeed,
+  AccountDailyFeed,
   PoolAccount,
   PoolImportRow,
   PoolStockRow,
   CreateAccountInput,
   CreateClientInput,
   CreateSubmissionInput,
+  EmailEventSetting,
+  EmailLocale,
+  EmailTestResult,
   PlanTemplate,
   PropAccount,
   PropPayment,
   PropSubmission,
   PropUser,
   PublicSubmissionsConfig,
+  SubmissionCredentials,
   PublicSubmissionBundle,
   SystemSetting,
   TradeEvent,
@@ -266,11 +271,14 @@ export async function fetchAuditLogsApi(): Promise<AuditLog[]> {
   return data.logs;
 }
 
+/**
+ * Creates the application, or returns the existing code when the applicant
+ * proves ownership. The server no longer echoes the stored record back — a 409
+ * means "this already exists, check your email" and lands in the catch below.
+ */
 export async function createSubmissionApi(input: CreateSubmissionInput): Promise<{
   reused: boolean;
   submissionCode: string;
-  application: PropSubmission;
-  payment: PropPayment | null;
 }> {
   let response: Response;
   try {
@@ -288,12 +296,7 @@ export async function createSubmissionApi(input: CreateSubmissionInput): Promise
     throw new Error(payload.message ?? "Submission failed");
   }
 
-  return (await response.json()) as {
-    reused: boolean;
-    submissionCode: string;
-    application: PropSubmission;
-    payment: PropPayment | null;
-  };
+  return (await response.json()) as { reused: boolean; submissionCode: string };
 }
 
 export async function fetchSubmissionByCodeApi(code: string): Promise<PublicSubmissionBundle> {
@@ -313,6 +316,35 @@ export async function fetchSubmissionByCodeApi(code: string): Promise<PublicSubm
   }
 
   return (await response.json()) as PublicSubmissionBundle;
+}
+
+/**
+ * Trades the applicant's own email for his own data.
+ *
+ * The status page shows everything masked, so the email is the one thing only
+ * the applicant can supply. The server rate limits and audits every attempt.
+ */
+export async function revealSubmissionCredentialsApi(
+  code: string,
+  email: string,
+): Promise<SubmissionCredentials> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}/public/submissions/${code}/reveal`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+  } catch (error) {
+    throw toNetworkError(error);
+  }
+
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => ({}))) as { message?: string };
+    throw new Error(payload.message ?? "Não foi possível liberar os dados.");
+  }
+
+  return (await response.json()) as SubmissionCredentials;
 }
 
 export async function fetchPublicSubmissionsConfigApi(): Promise<PublicSubmissionsConfig> {
@@ -432,6 +464,19 @@ export async function updateSettingsApi(settings: Record<string, string>): Promi
   });
 }
 
+export async function fetchEmailEventsApi(): Promise<EmailEventSetting[]> {
+  const data = await request<{ events: EmailEventSetting[] }>("/email-events", { method: "GET" });
+  return data.events;
+}
+
+export async function sendTestEmailApi(input: {
+  to: string;
+  kind: string;
+  locale: EmailLocale;
+}): Promise<EmailTestResult> {
+  return request<EmailTestResult>("/settings/test-email", { method: "POST", body: JSON.stringify(input) });
+}
+
 export async function fetchPoolApi(): Promise<{ accounts: PoolAccount[]; stock: PoolStockRow[] }> {
   return request<{ accounts: PoolAccount[]; stock: PoolStockRow[] }>("/pool", { method: "GET" });
 }
@@ -465,6 +510,24 @@ export async function sendTestWebhookApi(input: { submissionCode?: string; dryRu
 
 export async function testBrokerConnectionApi(): Promise<BrokerConnectionStatus> {
   return request<BrokerConnectionStatus>("/settings/test-broker", { method: "GET" });
+}
+
+export async function fetchAccountDailyApi(accountId: string): Promise<AccountDailyFeed> {
+  return request<AccountDailyFeed>(`/accounts/${accountId}/daily`, { method: "GET" });
+}
+
+export async function recordDailyResultApi(
+  accountId: string,
+  input: { date: string; pnl: number },
+): Promise<{ ok: true; account: PropAccount }> {
+  return request(`/accounts/${accountId}/daily`, { method: "POST", body: JSON.stringify(input) });
+}
+
+export async function deleteDailyResultApi(
+  accountId: string,
+  date: string,
+): Promise<{ ok: true; account: PropAccount }> {
+  return request(`/accounts/${accountId}/daily/${date}`, { method: "DELETE" });
 }
 
 export async function fetchAccountEventsApi(accountId: string): Promise<TradeEvent[]> {

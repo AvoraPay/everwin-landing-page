@@ -57,13 +57,30 @@ import {
   uid,
 } from "./utils.js";
 import {
+  SKIPPED,
+  buildAccountStatusChangedSubject,
+  buildApplicationReceivedSubject,
+  buildPaymentApprovedSubject,
+  buildPaymentLinkIssuedSubject,
+  buildPaymentOverdueSubject,
+  buildPendingPaymentReminderSubject,
+  buildPortalAccessSubject,
+  buildSubmissionStatusChangedSubject,
+  buildTradingAccountDeliveredSubject,
   sendAccessReadyEmail,
   sendAccountCredentialsEmail,
+  sendAccountStatusChangedEmail,
+  sendApplicationReceivedEmail,
   sendOtpEmail,
   sendPaymentApprovedEmail,
+  sendPaymentLinkIssuedEmail,
   sendPaymentLinkReleasedEmail,
+  sendPaymentOverdueEmail,
   sendPendingPaymentReminderEmail,
+  sendPortalAccessEmail,
   sendSubmissionReceivedEmail,
+  sendSubmissionStatusChangedEmail,
+  sendTradingAccountDeliveredEmail,
   sendWaitlistConfirmationEmail,
 } from "./emails.js";
 import { createCheckoutSession, isStripeEnabled, verifyStripeWebhook } from "./stripe.js";
@@ -208,6 +225,11 @@ const submissionLimiter = rateLimit({ windowMs: 60_000, max: 3, standardHeaders:
 const otpLimiter = rateLimit({ windowMs: 60_000, max: 3, standardHeaders: true, legacyHeaders: false, message: { message: "Too many OTP requests. Try again in 1 minute." } });
 const refreshLimiter = rateLimit({ windowMs: 60_000, max: 10, standardHeaders: true, legacyHeaders: false, message: { message: "Too many refresh attempts. Try again in 1 minute." } });
 const webhookLimiter = rateLimit({ windowMs: 60_000, max: 60, standardHeaders: true, legacyHeaders: false, message: { message: "Too many webhook requests." } });
+// Guessing an email address against a known submission code has to be expensive.
+const revealLimiter = rateLimit({ windowMs: 600_000, max: 5, standardHeaders: true, legacyHeaders: false, message: { message: "Muitas tentativas. Aguarde 10 minutos." } });
+// The status page polls every 30s, so this is generous for a real visitor and
+// still refuses a script walking the code space.
+const statusLimiter = rateLimit({ windowMs: 60_000, max: 30, standardHeaders: true, legacyHeaders: false, message: { message: "Too many requests." } });
 
 function describeBootError(error) {
   if (!error) {
@@ -312,6 +334,145 @@ function buildLoginUrl() {
 const DEFAULT_VACANCIES_MESSAGE =
   "Vacancies temporarily closed. Your application remains under review and the payment link will be sent manually by email and on the status page when availability opens.";
 
+/**
+ * Every notification the platform can send, in one place.
+ *
+ * `alwaysOn` events carry no enable/disable key at all: turning off the OTP
+ * would lock users out of password reset, and turning off credentials would
+ * leave a paying customer without the account they bought.
+ */
+const EMAIL_EVENTS = [
+  { kind: "application.received", label: "Inscrição recebida", description: "Confirmação logo após o envio do formulário." },
+  { kind: "payment.link.released", label: "Link de pagamento", description: "Quando o link da taxa de avaliação é emitido." },
+  { kind: "payment.pending.reminder", label: "Lembrete de pagamento", description: "Cobrança amigável antes do prazo vencer." },
+  { kind: "payment.overdue", label: "Pagamento vencido", description: "Aviso de que o prazo do pagamento expirou." },
+  { kind: "payment.approved", label: "Pagamento aprovado", description: "Confirmação da compra." },
+  { kind: "submission.status.changed", label: "Status da inscrição", description: "Revisão, rejeição ou cancelamento." },
+  {
+    kind: "account.status.changed",
+    label: "Status da conta",
+    description: "Aprovação, perda por drawdown ou por prazo.",
+    // Ships off: one bad cron run would mail every trader every night.
+    defaultEnabled: false,
+  },
+  { kind: "portal.access.ready", label: "Acesso ao portal", description: "Credenciais do portal.", alwaysOn: true },
+  { kind: "account.credentials.ready", label: "Conta entregue", description: "Credenciais da plataforma de operação.", alwaysOn: true },
+  { kind: "password.otp", label: "Código de senha", description: "Código de redefinição de senha.", alwaysOn: true },
+  // Legacy kind: kept so historical communication_logs rows still resolve a label.
+  { kind: "submission.waitlist", label: "Fila de espera (legado)", description: "Não é mais enviado.", legacy: true },
+];
+
+const EMAIL_EVENT_BY_KIND = Object.fromEntries(EMAIL_EVENTS.map((event) => [event.kind, event]));
+
+/** Human labels for the statuses that reach the applicant by e-mail. */
+const SUBMISSION_STATUS_LABELS = {
+  pt: {
+    under_review: "Em revisão",
+    rejected: "Rejeitada",
+    cancelled: "Cancelada",
+  },
+  en: {
+    under_review: "Under review",
+    rejected: "Rejected",
+    cancelled: "Cancelled",
+  },
+  es: {
+    under_review: "En revisión",
+    rejected: "Rechazada",
+    cancelled: "Cancelada",
+  },
+};
+
+const ACCOUNT_STATUS_LABELS = {
+  pt: {
+    passed: "Aprovada",
+    approved_for_funded: "Aprovada para conta financiada",
+    failed_drawdown: "Encerrada por drawdown",
+    failed_timeout: "Encerrada por prazo",
+    paused: "Pausada",
+    rejected: "Rejeitada",
+  },
+  en: {
+    passed: "Passed",
+    approved_for_funded: "Approved for funding",
+    failed_drawdown: "Closed — drawdown breach",
+    failed_timeout: "Closed — time limit",
+    paused: "Paused",
+    rejected: "Rejected",
+  },
+  es: {
+    passed: "Aprobada",
+    approved_for_funded: "Aprobada para cuenta fondeada",
+    failed_drawdown: "Cerrada por drawdown",
+    failed_timeout: "Cerrada por plazo",
+    paused: "Pausada",
+    rejected: "Rechazada",
+  },
+};
+
+/**
+ * One place every account-status transition passes through, so a trader learns
+ * the verdict from us rather than by logging in and finding the account dead.
+ * `previousStatus` must be read before the write — the template relies on it to
+ * stay idempotent, which is what keeps the nightly sync from re-mailing everyone.
+ */
+async function notifyAccountStatusChange({ account, previousStatus, locale }) {
+  if (!account || account.status === previousStatus) return;
+
+  const owner = await one("SELECT id, email, primary_email FROM users WHERE id = $1", [account.userId]);
+  const recipient = owner?.primary_email || owner?.email;
+  if (!recipient) return;
+
+  // The trader chose a language on the public form — write to them in it.
+  const localeRow = account.applicationId
+    ? await one("SELECT locale FROM applications WHERE id = $1", [account.applicationId])
+    : await one("SELECT locale FROM applications WHERE portal_user_id = $1 ORDER BY created_at DESC LIMIT 1", [account.userId]);
+  const resolved = normalizeLocale(locale ?? localeRow?.locale ?? "pt");
+
+  await sendAndLogEmailBestEffort(
+    "account.status.changed",
+    () =>
+      sendAccountStatusChangedEmail({
+        account: { ...account, notifyEmail: recipient },
+        previousStatus,
+        statusLabel: ACCOUNT_STATUS_LABELS[resolved]?.[account.status],
+        locale: resolved,
+        loginUrl: buildLoginUrl(),
+      }),
+    {
+      userId: owner?.id,
+      recipient,
+      subject: buildAccountStatusChangedSubject(account, resolved),
+    },
+  );
+}
+
+/** `payment.link.released` → `email_event_payment_link_released_enabled` */
+function emailEventSettingKey(kind, suffix = "enabled") {
+  return `email_event_${kind.replace(/\./g, "_")}_${suffix}`;
+}
+
+/**
+ * The one rule for "is this event on", kept pure so the send gate and the admin
+ * screen cannot drift: both feed it the same stored value.
+ */
+function resolveEmailKindEnabled(event, storedValue) {
+  if (!event) return true;
+  if (event.alwaysOn) return true;
+
+  const stored = String(storedValue ?? "").trim().toLowerCase();
+  if (!stored) return event.defaultEnabled !== false;
+  return stored !== "false";
+}
+
+async function isEmailKindEnabled(kind) {
+  const event = EMAIL_EVENT_BY_KIND[kind];
+  if (!event) return true;
+  if (event.alwaysOn) return true;
+
+  return resolveEmailKindEnabled(event, await getSystemSettingValue(emailEventSettingKey(kind)));
+}
+
 const SETTINGS_META = {
   everwin_admin_bearer: { sensitive: true },
   everwin_webhook_secret: { sensitive: true },
@@ -319,9 +480,36 @@ const SETTINGS_META = {
   novus_signing_secret: { sensitive: true },
   prop_vacancies_locked: { sensitive: false, defaultValue: "false" },
   prop_vacancies_message: { sensitive: false, defaultValue: DEFAULT_VACANCIES_MESSAGE },
+
+  // Sender identity — read by resolveSender() in emails.js. `allowEmpty` is what
+  // makes "clear this field and fall back to the configured default" reachable:
+  // without it PUT /api/settings drops empty values and the box can never be emptied.
+  email_sender_name: { sensitive: false, defaultValue: "", allowEmpty: true },
+  email_sender_address: { sensitive: false, defaultValue: "", allowEmpty: true },
+  email_reply_to: { sensitive: false, defaultValue: "", allowEmpty: true },
 };
 
+// Per-event keys are derived from the registry so a new notification cannot be
+// added without its switch existing. alwaysOn events get no switch at all.
+for (const event of EMAIL_EVENTS) {
+  if (event.legacy) continue;
+  if (!event.alwaysOn) {
+    SETTINGS_META[emailEventSettingKey(event.kind)] = {
+      sensitive: false,
+      defaultValue: event.defaultEnabled === false ? "false" : "true",
+    };
+  }
+  // A line the admin can add to this specific e-mail, in their own words.
+  // Clearable, otherwise a note written once would be stuck in every future send.
+  SETTINGS_META[emailEventSettingKey(event.kind, "note")] = { sensitive: false, defaultValue: "", allowEmpty: true };
+}
+
 const ALLOWED_SETTINGS = Object.keys(SETTINGS_META);
+
+/** The admin's custom line for an event, if they wrote one. */
+async function emailEventNote(kind) {
+  return (await getSystemSettingValue(emailEventSettingKey(kind, "note"))) || undefined;
+}
 
 async function getSystemSettingValue(key) {
   const row = await one("SELECT value FROM system_settings WHERE key = $1", [key]);
@@ -420,9 +608,45 @@ async function getPaymentByApplicationId(applicationId) {
   return row ? mapPaymentRow(row) : null;
 }
 
-async function sendAndLogEmail(kind, sender, payload) {
+/**
+ * @param {{ force?: boolean }} [options] `force` bypasses the on/off switch, for
+ *   the admin test send: an explicit request must not be swallowed by a toggle.
+ * @returns {Promise<{ status: "sent" | "skipped", reason?: string, providerMessageId?: string | null }>}
+ *   Callers that only care about delivery ignore it; the test route reports it.
+ */
+async function sendAndLogEmail(kind, sender, payload, options = {}) {
+  // One gate for every call site — never gate at the individual sends.
+  if (!options.force && !(await isEmailKindEnabled(kind))) {
+    await recordCommunication({
+      applicationId: payload.applicationId,
+      userId: payload.userId,
+      kind,
+      recipient: payload.recipient,
+      subject: payload.subject,
+      status: "skipped",
+      payload: { ...payload, skippedReason: "event_disabled_in_settings" },
+    });
+    return { status: "skipped", reason: "event_disabled_in_settings" };
+  }
+
   try {
     const response = await sender();
+
+    // The template itself decided this event did not warrant an e-mail — or
+    // Resend is not configured at all, which sendMail also reports as SKIPPED.
+    if (response === SKIPPED) {
+      await recordCommunication({
+        applicationId: payload.applicationId,
+        userId: payload.userId,
+        kind,
+        recipient: payload.recipient,
+        subject: payload.subject,
+        status: "skipped",
+        payload: { ...payload, skippedReason: "template_guard" },
+      });
+      return { status: "skipped", reason: "template_guard" };
+    }
+
     const data = response?.data ?? response;
     await recordCommunication({
       applicationId: payload.applicationId,
@@ -435,6 +659,7 @@ async function sendAndLogEmail(kind, sender, payload) {
       payload,
       sentAt: nowISO(),
     });
+    return { status: "sent", providerMessageId: data?.id ?? null };
   } catch (error) {
     await recordCommunication({
       applicationId: payload.applicationId,
@@ -547,6 +772,24 @@ async function syncPaymentStatus({
 
   // ─── AUTO-PROVISION: when payment approved → create user + account + platform ───
   if (status === "approved") {
+    // Confirmation lives here so every provider — Novus, Stripe, manual admin —
+    // sends exactly one, and none of them can forget.
+    const planRow = await one("SELECT * FROM plans WHERE id = $1", [application.planId]);
+    await sendAndLogEmailBestEffort(
+      "payment.approved",
+      () =>
+        sendPaymentApprovedEmail({
+          application,
+          plan: planRow ? mapPlanRow(planRow) : null,
+          statusUrl: buildStatusUrl(application.submissionCode),
+        }),
+      {
+        applicationId: application.id,
+        recipient: application.email,
+        subject: buildPaymentApprovedSubject(application),
+      },
+    );
+
     try {
       await autoProvisionFullAccount(application);
     } catch (provisionErr) {
@@ -582,12 +825,12 @@ async function autoProvisionFullAccount(application) {
   let portalUser;
 
   if (portalUserRow) {
-    // User exists — rotate password
-    await query("UPDATE users SET password_hash = $1, updated_at = $2 WHERE id = $3", [
-      await hashPassword(temporaryPassword),
-      nowISO(),
-      portalUserRow.id,
-    ]);
+    // User exists — rotate password. The reversible copy travels with the hash so
+    // the status page can hand the trader the password the email was supposed to.
+    await query(
+      "UPDATE users SET password_hash = $1, portal_password_enc = $2, portal_password_revealed_at = NULL, updated_at = $3 WHERE id = $4",
+      [await hashPassword(temporaryPassword), encryptSecret(temporaryPassword), nowISO(), portalUserRow.id],
+    );
     portalUser = mapUserRow(portalUserRow);
   } else {
     portalUser = await createPortalUserFromApplication(application, temporaryPassword);
@@ -671,12 +914,7 @@ async function autoProvisionFullAccount(application) {
 
   // 4. Send access-ready email (best-effort)
   try {
-    const subject =
-      application.locale === "en"
-        ? `Your prop account is ready • ${portalUser.email}`
-        : application.locale === "es"
-          ? `Tu cuenta prop está lista • ${portalUser.email}`
-          : `Sua conta prop está pronta • ${portalUser.email}`;
+    const subject = buildPortalAccessSubject({ email: portalUser.email, locale: application.locale });
 
     await sendAndLogEmailBestEffort(
       "portal.access.ready",
@@ -699,67 +937,146 @@ async function autoProvisionFullAccount(application) {
     // Non-fatal
   }
 
+  // 5. Deliver the platform credentials — the thing the trader actually needs.
+  await deliverTradingCredentials({ accountInternalId, application, portalUser, plan });
+
   console.log(`[AutoProvision] Complete for submission ${application.submissionCode}`);
 }
 
+/**
+ * Mails the platform credentials for an account.
+ *
+ * Provisioning can fail silently (empty pool plus a stale broker token), leaving
+ * an account with no login at all. A credentials e-mail with blank fields is
+ * worse than none, so that case is logged as skipped and stays visible.
+ */
+async function deliverTradingCredentials({ accountInternalId, application, portalUser, plan }) {
+  const row = await one("SELECT * FROM accounts WHERE id = $1", [accountInternalId]);
+  if (!row) return;
+
+  const recipient = application?.email ?? portalUser?.email;
+  const subject = buildTradingAccountDeliveredSubject({ accountId: row.account_id }, application?.locale);
+
+  if (!row.platform_login || !row.platform_password_enc) {
+    await recordCommunication({
+      applicationId: application?.id,
+      userId: portalUser?.id,
+      kind: "account.credentials.ready",
+      recipient,
+      subject,
+      status: "skipped",
+      payload: { accountId: row.account_id, skippedReason: "account_without_platform_credentials" },
+    });
+    console.warn(`[AutoProvision] ${row.account_id} has no platform credentials — credentials e-mail skipped`);
+    return;
+  }
+
+  const account = mapAccountRow(row, true);
+
+  await sendAndLogEmailBestEffort(
+    "account.credentials.ready",
+    () =>
+      sendTradingAccountDeliveredEmail({
+        application,
+        portalUser,
+        account,
+        plan,
+        loginUrl: buildLoginUrl(),
+        tradeRoomUrl: account.tradeRoomUrl,
+      }),
+    { applicationId: application?.id, userId: portalUser?.id, recipient, subject },
+  );
+}
+
 async function ensurePendingPaymentReminders() {
-  const rows = await many(
+  const now = nowISO();
+
+  /** Shared shape for both branches. */
+  const toPayment = (row, application) => ({
+    id: row.payment_id,
+    applicationId: application.id,
+    paymentCode: row.payment_code,
+    provider: row.provider,
+    status: row.payment_status,
+    amount: Number(row.amount),
+    currency: row.currency,
+    checkoutUrl: row.checkout_url ?? undefined,
+    dueAt: application.paymentDueAt,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  });
+
+  // A nudge while the window is still open.
+  const dueSoon = await many(
     `
-      SELECT a.*, p.id AS payment_id, p.payment_code, p.checkout_url, p.reminder_sent_at, p.amount, p.currency
+      SELECT a.*, p.id AS payment_id, p.payment_code, p.checkout_url, p.reminder_sent_at, p.amount, p.currency, p.provider
       FROM applications a
       JOIN payments p ON p.application_id = a.id
       WHERE p.status IN ('pending','overdue')
         AND a.status NOT IN ('submitted')
         AND p.reminder_sent_at IS NULL
-        AND p.created_at <= $1
+        AND a.payment_due_at > $1
       ORDER BY p.created_at ASC
     `,
-    [addHours(nowISO(), -1)],
+    [now],
   );
 
-  for (const row of rows) {
+  for (const row of dueSoon) {
     const application = mapApplicationRow(row);
-    const payment = {
-      id: row.payment_id,
-      applicationId: application.id,
-      paymentCode: row.payment_code,
-      provider: row.provider,
-      status: row.payment_status,
-      amount: Number(row.amount),
-      currency: row.currency,
-      checkoutUrl: row.checkout_url ?? undefined,
-      dueAt: application.paymentDueAt,
-      reminderSentAt: row.reminder_sent_at ?? undefined,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-    };
-
-    const subject =
-      application.locale === "en"
-        ? `Pending payment reminder • ${application.submissionCode}`
-        : application.locale === "es"
-          ? `Recordatorio de pago pendiente • ${application.submissionCode}`
-          : `Lembrete de pagamento pendente • ${application.submissionCode}`;
-
     await sendAndLogEmail(
       "payment.pending.reminder",
-      () => sendPendingPaymentReminderEmail({ application, payment, statusUrl: buildStatusUrl(application.submissionCode) }),
+      () =>
+        sendPendingPaymentReminderEmail({
+          application,
+          payment: toPayment(row, application),
+          statusUrl: buildStatusUrl(application.submissionCode),
+        }),
       {
         applicationId: application.id,
         recipient: application.email,
-        subject,
+        subject: buildPendingPaymentReminderSubject(application),
+      },
+    );
+
+    await query("UPDATE payments SET reminder_sent_at = $1, updated_at = $1 WHERE id = $2", [now, row.payment_id]);
+  }
+
+  // The window closed. Tracked on its own column so a row that already got a
+  // reminder still gets exactly one expiry notice, and never a second.
+  const expired = await many(
+    `
+      SELECT a.*, p.id AS payment_id, p.payment_code, p.checkout_url, p.amount, p.currency, p.provider
+      FROM applications a
+      JOIN payments p ON p.application_id = a.id
+      WHERE p.status IN ('pending','overdue')
+        AND a.status NOT IN ('submitted')
+        AND p.expired_notice_sent_at IS NULL
+        AND a.payment_due_at <= $1
+      ORDER BY p.created_at ASC
+    `,
+    [now],
+  );
+
+  for (const row of expired) {
+    const application = mapApplicationRow(row);
+    await sendAndLogEmail(
+      "payment.overdue",
+      () =>
+        sendPaymentOverdueEmail({
+          application,
+          payment: toPayment(row, application),
+          statusUrl: buildStatusUrl(application.submissionCode),
+        }),
+      {
+        applicationId: application.id,
+        recipient: application.email,
+        subject: buildPaymentOverdueSubject(application),
       },
     );
 
     await query(
-      `
-        UPDATE payments
-        SET reminder_sent_at = $1,
-            status = CASE WHEN status = 'pending' THEN 'overdue' ELSE status END,
-            updated_at = $2
-        WHERE id = $3
-      `,
-      [nowISO(), nowISO(), row.payment_id],
+      "UPDATE payments SET expired_notice_sent_at = $1, status = CASE WHEN status = 'pending' THEN 'overdue' ELSE status END, updated_at = $1 WHERE id = $2",
+      [now, row.payment_id],
     );
     await query(
       `
@@ -769,7 +1086,7 @@ async function ensurePendingPaymentReminders() {
             updated_at = $1
         WHERE id = $2
       `,
-      [nowISO(), application.id],
+      [now, application.id],
     );
   }
 }
@@ -813,6 +1130,7 @@ async function runDailyAccountSync(triggerType = "system") {
 
     await saveAccount(evaluated);
     await upsertPerformancePoint(evaluated.id, point);
+    await notifyAccountStatusChange({ account: evaluated, previousStatus: account.status });
   }
 
   await query(
@@ -982,7 +1300,13 @@ app.get("/api/health", async (_req, res) => {
     service: "everwin-prop-api",
     dbReady,
     timestamp: nowISO(),
-    bootError: describeBootError(app.locals.bootError),
+    // The raw Postgres error names the host, the user and the driver version.
+    // Useful locally, an unauthenticated recon gift in production.
+    bootError: app.locals.bootError
+      ? config.isProduction
+        ? "boot_error"
+        : describeBootError(app.locals.bootError)
+      : null,
   });
 });
 
@@ -1040,13 +1364,24 @@ app.post("/api/public/submissions", submissionLimiter, async (req, res) => {
   );
 
   if (existing) {
-    const bundle = await getSubmissionBundleByCode(existing.submission_code);
-    return res.status(200).json({
-      reused: true,
-      submissionCode: existing.submission_code,
-      application: bundle?.application,
-      payment: bundle?.payment,
-    });
+    // This route answers an unauthenticated caller, and the match can fire on an
+    // email alone — or on a name plus a phone. Echoing the stored application
+    // here would hand a stranger's dossier, and even the tracking code is enough
+    // to open the status page. Only an applicant who supplies BOTH the email and
+    // the document of the same record gets the code back.
+    const strongMatch =
+      existing.normalized_email === normalizedEmail &&
+      Boolean(documentHash) &&
+      existing.cpf_hash === documentHash;
+
+    if (!strongMatch) {
+      return res.status(409).json({
+        message:
+          "Já existe uma inscrição com esses dados. Use o código enviado por e-mail para acompanhar o andamento.",
+      });
+    }
+
+    return res.status(200).json({ reused: true, submissionCode: existing.submission_code });
   }
 
   const planId = mapPublicPlanId(parsed.data.planKey, locale);
@@ -1059,7 +1394,7 @@ app.post("/api/public/submissions", submissionLimiter, async (req, res) => {
   const submissionCode = createSubmissionCodeFromDocument(normalizedDocumentNumber, parsed.data.country);
   const paymentCode = createShortCode("pay_");
   const submittedAt = nowISO();
-  const paymentDueAt = addHours(submittedAt, 1);
+  const paymentDueAt = addHours(submittedAt, 48);
   const paymentProvider = "manual_link";
   const checkoutUrl = resolveCheckoutUrl(plan.id);
 
@@ -1144,38 +1479,36 @@ app.post("/api/public/submissions", submissionLimiter, async (req, res) => {
   const application = mapApplicationRow(applicationRow);
   const payment = await getPaymentByApplicationId(application.id);
 
-  // Automatic payment mode: the plan checkout link is issued with the application,
-  // so the candidate can pay immediately. If no link is configured for the plan the
-  // application falls back to manual release by an admin.
-  const subject = checkoutUrl
-    ? locale === "en"
-      ? `Everwin Prop — complete your payment • ${application.submissionCode}`
-      : locale === "es"
-        ? `Everwin Prop — complete su pago • ${application.submissionCode}`
-        : `Everwin Prop — finalize seu pagamento • ${application.submissionCode}`
-    : locale === "en"
-      ? `Everwin Prop — application received • ${application.submissionCode}`
-      : locale === "es"
-        ? `Everwin Prop — solicitud recibida • ${application.submissionCode}`
-        : `Everwin Prop — inscrição recebida • ${application.submissionCode}`;
-
+  // Two distinct facts, two distinct e-mails. Announcing a payment link as
+  // "your application was approved" seconds after submit, with nothing reviewed,
+  // is a misrepresentation — the receipt and the payment request stay separate.
   await sendAndLogEmailBestEffort(
-    checkoutUrl ? "payment.link.released" : "submission.waitlist",
-    () =>
-      checkoutUrl
-        ? sendPaymentLinkReleasedEmail({
-            application,
-            plan,
-            checkoutUrl,
-            statusUrl: buildStatusUrl(application.submissionCode),
-          })
-        : sendWaitlistConfirmationEmail({ application, plan, statusUrl: buildStatusUrl(application.submissionCode) }),
+    "application.received",
+    () => sendApplicationReceivedEmail({ application, plan, statusUrl: buildStatusUrl(application.submissionCode) }),
     {
       applicationId: application.id,
       recipient: application.email,
-      subject,
+      subject: buildApplicationReceivedSubject(application),
     },
   );
+
+  if (checkoutUrl) {
+    await sendAndLogEmailBestEffort(
+      "payment.link.released",
+      () =>
+        sendPaymentLinkIssuedEmail({
+          application,
+          plan,
+          checkoutUrl,
+          statusUrl: buildStatusUrl(application.submissionCode),
+        }),
+      {
+        applicationId: application.id,
+        recipient: application.email,
+        subject: buildPaymentLinkIssuedSubject(application),
+      },
+    );
+  }
 
   await audit(null, "CREATE_SUBMISSION", "application", application.id, {
     submissionCode: application.submissionCode,
@@ -1191,16 +1524,41 @@ app.post("/api/public/submissions", submissionLimiter, async (req, res) => {
   });
 });
 
-app.get("/api/public/submissions/:code", async (req, res) => {
+/** d***@gmail.com — enough to recognise your own address, not enough to learn it. */
+function maskEmail(value) {
+  if (!value || typeof value !== "string") return undefined;
+  const [local, domain] = value.split("@");
+  if (!domain) return "***";
+  return `${local.slice(0, 1)}***@${domain}`;
+}
+
+/** Keeps the tail so the owner recognises it, hides everything that identifies. */
+function maskTail(value, keep = 2) {
+  if (!value || typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  if (trimmed.length <= keep) return "***";
+  return `***${trimmed.slice(-keep)}`;
+}
+
+app.get("/api/public/submissions/:code", statusLimiter, async (req, res) => {
   const bundle = await getSubmissionBundleByCode(req.params.code);
   if (!bundle) return res.status(404).json({ message: "Submission not found." });
   const vacanciesLocked = await areVacanciesLocked();
   const vacanciesMessage = await getVacanciesMessage();
 
-  // Strip sensitive credentials from public endpoint
-  const safeAccounts = (bundle.accounts ?? []).map(({ platformPassword, platformLogin, ...rest }) => ({
-    ...rest,
-    platformLogin: platformLogin ? `${platformLogin.slice(0, 3)}***` : undefined,
+  // The tracking page shows an account's identity and state, nothing more.
+  // Balances, internal notes and the broker's user id stay behind the login.
+  const safeAccounts = (bundle.accounts ?? []).map((account) => ({
+    id: account.id,
+    accountId: account.accountId,
+    planId: account.planId,
+    phase: account.phase,
+    status: account.status,
+    startDate: account.startDate,
+    endDate: account.endDate,
+    platformLogin: account.platformLogin ? `${account.platformLogin.slice(0, 3)}***` : undefined,
+    platformName: account.platformName,
+    brokerName: account.brokerName,
   }));
 
   // The checkout link belongs to the candidate once the application exists.
@@ -1217,14 +1575,105 @@ app.get("/api/public/submissions/:code", async (req, res) => {
       }
     : bundle.payment;
 
+  // The submission code travels in a URL and is guessable by design, so this
+  // response carries no contact data in the clear. The applicant proves the
+  // address is his through /reveal, and only then gets it back whole.
+  // Only what the tracking page actually renders. The questionnaire answers,
+  // the city and the occupation have no reason to leave the database for a page
+  // that anyone holding the code can open.
+  const safeApplication = {
+    id: bundle.application.id,
+    submissionCode: bundle.application.submissionCode,
+    planId: bundle.application.planId,
+    fullName: bundle.application.fullName,
+    documentType: bundle.application.documentType,
+    locale: bundle.application.locale,
+    amount: bundle.application.amount,
+    currency: bundle.application.currency,
+    status: bundle.application.status,
+    paymentStatus: bundle.application.paymentStatus,
+    paymentDueAt: bundle.application.paymentDueAt,
+    submittedAt: bundle.application.submittedAt,
+    paidAt: bundle.application.paidAt,
+    reviewedAt: bundle.application.reviewedAt,
+    email: maskEmail(bundle.application.email),
+    phone: maskTail(bundle.application.phone),
+    cpf: maskTail(bundle.application.cpf),
+    documentNumber: maskTail(bundle.application.documentNumber),
+  };
+
+  const safeUser = bundle.user
+    ? { id: bundle.user.id, name: bundle.user.name, email: maskEmail(bundle.user.primaryEmail ?? bundle.user.email) }
+    : null;
+
   return res.json({
     ...bundle,
+    application: safeApplication,
+    user: safeUser,
     payment: safePayment,
     accounts: safeAccounts,
     loginUrl: buildLoginUrl(),
     canAccessPortal: Boolean(bundle.user && ["access_ready", "account_ready"].includes(bundle.application.status)),
+    hasPortalPassword: Boolean(bundle.user),
     vacanciesLocked,
     vacanciesMessage,
+  });
+});
+
+/**
+ * Hands the applicant his own data back, including the portal password.
+ *
+ * The proof of ownership is the email address he applied with: it is masked
+ * everywhere else on the page, so typing it whole is something only he can do.
+ * Every attempt is rate limited and every success is audited.
+ */
+app.post("/api/public/submissions/:code/reveal", revealLimiter, async (req, res) => {
+  const email = typeof req.body?.email === "string" ? normalizeEmail(req.body.email) : "";
+  if (!email) return res.status(400).json({ message: "Informe o e-mail usado na inscrição." });
+
+  const bundle = await getSubmissionBundleByCode(req.params.code);
+  if (!bundle) return res.status(404).json({ message: "Submission not found." });
+
+  const expected = normalizeEmail(bundle.application.email ?? "");
+  const a = Buffer.from(email, "utf8");
+  const b = Buffer.from(expected, "utf8");
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    return res.status(403).json({ message: "Esse e-mail não corresponde ao da inscrição." });
+  }
+
+  let portalPassword;
+  let passwordState = "none";
+  if (bundle.user) {
+    const userRow = await one("SELECT portal_password_enc FROM users WHERE id = $1", [bundle.user.id]);
+    if (userRow?.portal_password_enc) {
+      try {
+        portalPassword = decryptSecret(userRow.portal_password_enc);
+        passwordState = "available";
+      } catch {
+        passwordState = "unreadable";
+      }
+      await query("UPDATE users SET portal_password_revealed_at = $1 WHERE id = $2", [nowISO(), bundle.user.id]);
+    } else {
+      // Cleared the moment the trader sets his own password — showing a stale one
+      // would send him to a login that no longer works.
+      passwordState = "changed_by_user";
+    }
+  }
+
+  await audit(bundle.user?.id ?? null, "REVEAL_SUBMISSION_CREDENTIALS", "application", bundle.application.id, {
+    submissionCode: bundle.application.submissionCode,
+    passwordState,
+  });
+
+  return res.json({
+    email: bundle.application.email,
+    phone: bundle.application.phone ?? null,
+    document: bundle.application.cpf ?? bundle.application.documentNumber ?? null,
+    portalLogin: bundle.user ? bundle.user.primaryEmail ?? bundle.user.email : null,
+    portalPassword: portalPassword ?? null,
+    passwordState,
+    loginUrl: buildLoginUrl(),
+    accounts: (bundle.accounts ?? []).map((a) => ({ accountId: a.accountId, platformLogin: a.platformLogin })),
   });
 });
 
@@ -1292,7 +1741,12 @@ app.post("/api/public/password/confirm-otp", otpLimiter, async (req, res) => {
   const userRow =
     (await one("SELECT * FROM users WHERE email = $1", [normalized])) ??
     (await one("SELECT * FROM users WHERE primary_email_normalized = $1", [normalized]));
-  if (!userRow) return res.status(404).json({ message: "User not found." });
+  // Every failure below answers identically. request-otp already refuses to say
+  // whether an address exists; a distinct "user not found" here would hand that
+  // answer back and undo it.
+  const INVALID_OTP = { status: 400, message: "Invalid or expired code." };
+  const codeHash = sha256(parsed.data.otp);
+  if (!userRow) return res.status(INVALID_OTP.status).json({ message: INVALID_OTP.message });
 
   const otpRow = await one(
     `
@@ -1307,20 +1761,39 @@ app.post("/api/public/password/confirm-otp", otpLimiter, async (req, res) => {
     [userRow.id, normalized],
   );
 
-  if (!otpRow) return res.status(400).json({ message: "OTP not found." });
-  if (new Date(otpRow.expires_at).getTime() < Date.now()) return res.status(400).json({ message: "OTP expired." });
-  if (otpRow.code_hash !== sha256(parsed.data.otp)) return res.status(400).json({ message: "OTP invalid." });
+  if (!otpRow) return res.status(INVALID_OTP.status).json({ message: INVALID_OTP.message });
+  if (new Date(otpRow.expires_at).getTime() < Date.now()) {
+    return res.status(INVALID_OTP.status).json({ message: INVALID_OTP.message });
+  }
+  // Six digits is a million guesses; an IP-based limiter alone does not stop a
+  // pool of IPs. The code itself burns after a handful of wrong tries.
+  if (Number(otpRow.attempts ?? 0) >= 5) {
+    await query("UPDATE password_otps SET consumed_at = $1 WHERE id = $2", [nowISO(), otpRow.id]);
+    return res.status(INVALID_OTP.status).json({ message: INVALID_OTP.message });
+  }
+  if (otpRow.code_hash !== codeHash) {
+    await query("UPDATE password_otps SET attempts = attempts + 1 WHERE id = $1", [otpRow.id]);
+    return res.status(INVALID_OTP.status).json({ message: INVALID_OTP.message });
+  }
 
   await query(
     `
       UPDATE users
       SET password_hash = $1,
+          portal_password_enc = NULL,
+          portal_password_revealed_at = NULL,
           updated_at = $2
       WHERE id = $3
     `,
     [await hashPassword(parsed.data.newPassword), nowISO(), userRow.id],
   );
   await query("UPDATE password_otps SET consumed_at = $1 WHERE id = $2", [nowISO(), otpRow.id]);
+  // A password reset that leaves old sessions alive does not lock anyone out:
+  // a stolen refresh token would keep working for the rest of its week.
+  await query("UPDATE refresh_tokens SET revoked_at = $1 WHERE user_id = $2 AND revoked_at IS NULL", [
+    nowISO(),
+    userRow.id,
+  ]);
   await audit(userRow.id, "RESET_PASSWORD_OTP", "user", userRow.id, null);
 
   return res.json({ ok: true });
@@ -1330,7 +1803,13 @@ app.post("/api/auth/login", loginLimiter, async (req, res) => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ message: "Invalid payload." });
 
-  const userRow = await one("SELECT * FROM users WHERE email = $1", [normalizeEmail(parsed.data.email)]);
+  // The portal issues an @everwin.capital address, but the trader is told to log
+  // in with the email he applied with. Both have to work, or a paying customer is
+  // locked out by an address he never chose.
+  const loginEmail = normalizeEmail(parsed.data.email);
+  const userRow =
+    (await one("SELECT * FROM users WHERE email = $1", [loginEmail])) ??
+    (await one("SELECT * FROM users WHERE primary_email_normalized = $1", [loginEmail]));
   if (!userRow) return res.status(401).json({ message: "Invalid credentials." });
   if (!["active", "invited"].includes(userRow.status)) return res.status(403).json({ message: "User blocked." });
 
@@ -1616,21 +2095,8 @@ app.patch("/api/submissions/:id/payment", requireAuth, requireRole("admin"), asy
     adminNotes: parsed.data.adminNotes || undefined,
   });
 
-  if (parsed.data.status === "approved") {
-    const subject =
-      application.locale === "en"
-        ? `Payment confirmed • ${application.submissionCode}`
-        : application.locale === "es"
-          ? `Pago confirmado • ${application.submissionCode}`
-          : `Pagamento confirmado • ${application.submissionCode}`;
-
-    await sendAndLogEmailBestEffort("payment.approved", () => sendPaymentApprovedEmail({ application, statusUrl: buildStatusUrl(application.submissionCode) }), {
-        applicationId: application.id,
-        recipient: application.email,
-        subject,
-      },
-    );
-  }
+  // The approval e-mail is sent by syncPaymentStatus — sending it here too
+  // would mail the customer twice for one approval.
 
   await audit(req.authUser.id, "UPDATE_PAYMENT_STATUS", "application", req.params.id, parsed.data);
   const bundle = await getSubmissionBundleByCode(applicationRow.submission_code);
@@ -1654,6 +2120,26 @@ app.patch("/api/submissions/:id/status", requireAuth, requireRole("admin"), asyn
       WHERE id = $5
     `,
     [parsed.data.status, parsed.data.adminNotes ?? "", nowISO(), nowISO(), req.params.id],
+  );
+
+  // A rejection or cancellation was never communicated before — the applicant
+  // simply stopped hearing from us. The template skips the statuses that
+  // already have a richer e-mail of their own.
+  const updated = mapApplicationRow({ ...row, status: parsed.data.status });
+  await sendAndLogEmailBestEffort(
+    "submission.status.changed",
+    () =>
+      sendSubmissionStatusChangedEmail({
+        application: updated,
+        statusLabel: SUBMISSION_STATUS_LABELS[normalizeLocale(updated.locale)]?.[parsed.data.status],
+        statusUrl: buildStatusUrl(updated.submissionCode),
+        customNote: parsed.data.adminNotes || undefined,
+      }),
+    {
+      applicationId: updated.id,
+      recipient: updated.email,
+      subject: buildSubmissionStatusChangedSubject(updated),
+    },
   );
 
   await audit(req.authUser.id, "UPDATE_SUBMISSION_STATUS", "application", req.params.id, parsed.data);
@@ -1703,12 +2189,7 @@ app.post("/api/submissions/:id/release-payment", requireAuth, requireRole("admin
   const planRow = await one("SELECT * FROM plans WHERE id = $1", [application.planId]);
   const plan = planRow ? mapPlanRow(planRow) : null;
 
-  const subject =
-    application.locale === "en"
-      ? `Everwin Prop — your payment link is ready • ${application.submissionCode}`
-      : application.locale === "es"
-        ? `Everwin Prop — su link de pago está listo • ${application.submissionCode}`
-        : `Everwin Prop — seu link de pagamento está liberado • ${application.submissionCode}`;
+  const subject = buildPaymentLinkIssuedSubject(application);
 
   await sendAndLogEmailBestEffort(
     "payment.link.released",
@@ -1758,10 +2239,12 @@ app.post("/api/submissions/:id/provision-access", requireAuth, requireRole("admi
         `
           UPDATE users
           SET password_hash = $1,
-              updated_at = $2
-          WHERE id = $3
+              portal_password_enc = $2,
+              portal_password_revealed_at = NULL,
+              updated_at = $3
+          WHERE id = $4
         `,
-        [await hashPassword(temporaryPassword), nowISO(), portalUserRow.id],
+        [await hashPassword(temporaryPassword), encryptSecret(temporaryPassword), nowISO(), portalUserRow.id],
       );
       portalUser = mapUserRow(portalUserRow);
     } else {
@@ -1781,12 +2264,7 @@ app.post("/api/submissions/:id/provision-access", requireAuth, requireRole("admi
     [portalUser.id, nowISO(), nowISO(), application.id],
   );
 
-  const subject =
-    application.locale === "en"
-      ? `Portal access ready • ${portalUser.email}`
-      : application.locale === "es"
-        ? `Acceso al portal listo • ${portalUser.email}`
-        : `Acesso ao portal liberado • ${portalUser.email}`;
+  const subject = buildPortalAccessSubject({ email: portalUser.email, locale: application.locale });
 
   await sendAndLogEmailBestEffort(
     "portal.access.ready",
@@ -1908,13 +2386,9 @@ app.post("/api/accounts", requireAuth, requireRole("admin"), async (req, res) =>
     ],
   );
 
-  await upsertPerformancePoint(accountId, {
-    date: now.slice(0, 10),
-    pnl: 0,
-    balance: plan.accountSize,
-    phase: 1,
-    breachedDailyLimit: false,
-  });
+  // No seed point on purpose: a brand new account has not traded, and an
+  // artificial zero-result day would show up on the trader's calendar as a
+  // day that never happened.
 
   if (resolvedApplicationId) {
     await query(
@@ -1944,12 +2418,7 @@ app.post("/api/accounts", requireAuth, requireRole("admin"), async (req, res) =>
     if (applicationRow) {
       const application = mapApplicationRow(applicationRow);
       const portalUser = mapUserRow(userRow);
-      const subject =
-        application.locale === "en"
-          ? `Trading account delivered • ${account.accountId}`
-          : application.locale === "es"
-            ? `Cuenta entregada • ${account.accountId}`
-            : `Conta entregue • ${account.accountId}`;
+      const subject = buildTradingAccountDeliveredSubject(account, application.locale);
 
       await sendAndLogEmailBestEffort(
         "account.credentials.ready",
@@ -2004,6 +2473,7 @@ app.patch("/api/accounts/:id", requireAuth, requireRole("admin"), async (req, re
 
   await saveAccount(evaluated);
   await upsertPerformancePoint(evaluated.id, point);
+  await notifyAccountStatusChange({ account: evaluated, previousStatus: current.status });
 
   // Update credentials if provided
   if (parsed.data.platformLogin || parsed.data.platformPassword || parsed.data.brokerName !== undefined) {
@@ -2029,11 +2499,14 @@ app.patch("/api/accounts/:id/status", requireAuth, requireRole("admin"), async (
   const parsed = statusSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ message: "Invalid payload." });
 
+  // Read before the write — the idempotency guard depends on the old value.
+  const before = await one("SELECT status FROM accounts WHERE id = $1", [req.params.id]);
   const result = await query("UPDATE accounts SET status = $1, updated_at = $2 WHERE id = $3", [parsed.data.status, nowISO(), req.params.id]);
   if (result.rowCount === 0) return res.status(404).json({ message: "Account not found." });
 
   await audit(req.authUser.id, "SET_ACCOUNT_STATUS", "account", req.params.id, parsed.data);
   const row = await one("SELECT * FROM accounts WHERE id = $1", [req.params.id]);
+  await notifyAccountStatusChange({ account: mapAccountRow(row), previousStatus: before?.status });
   return res.json({ account: await getAccountDomainByRow(row, true) });
 });
 
@@ -2046,6 +2519,7 @@ app.post("/api/rules/evaluate", requireAuth, requireRole("admin"), async (req, r
     if (!plan) continue;
     const evaluated = evaluateAccount(account, plan, nowISO());
     await saveAccount(evaluated);
+    await notifyAccountStatusChange({ account: evaluated, previousStatus: account.status });
   }
 
   await audit(req.authUser.id, "RUN_RULES_EVALUATION", "system", "prop-rules", { accounts: accounts.length });
@@ -2122,10 +2596,13 @@ app.put("/api/settings", requireAuth, requireRole("admin"), async (req, res) => 
     if (typeof val !== "string") continue;
 
     const trimmed = val.trim();
-    if (!trimmed) continue;
+    // Empty means "keep what is stored" for secrets, which is how the UI leaves
+    // password fields untouched. Only keys that opt in can actually be cleared.
+    if (!trimmed && !meta.allowEmpty) continue;
 
     let normalized = trimmed;
-    if (key === "prop_vacancies_locked") {
+    // Boolean settings only ever store "true"/"false".
+    if (key === "prop_vacancies_locked" || key.endsWith("_enabled")) {
       const normalizedBool = trimmed.toLowerCase();
       if (!["true", "false"].includes(normalizedBool)) continue;
       normalized = normalizedBool;
@@ -2142,6 +2619,239 @@ app.put("/api/settings", requireAuth, requireRole("admin"), async (req, res) => 
   await audit(req.authUser.id, "UPDATE_SETTINGS", "system", "settings", { keys: updatedKeys });
   res.json({ ok: true });
 });
+
+// ─── E-MAIL NOTIFICATIONS (registry, per-event switches, test send) ───────────
+
+/**
+ * The notification registry with each event's current state, so the admin screen
+ * renders from the server truth instead of a hardcoded copy that silently rots
+ * the day someone adds an event here.
+ */
+app.get("/api/email-events", requireAuth, requireRole("admin"), async (_req, res) => {
+  // Legacy kinds exist only so old communication_logs rows resolve a label —
+  // offering a switch for something that is never sent would be a lie.
+  const events = EMAIL_EVENTS.filter((event) => !event.legacy);
+  const keys = events.flatMap((event) => [emailEventSettingKey(event.kind), emailEventSettingKey(event.kind, "note")]);
+  const rows = await many("SELECT key, value FROM system_settings WHERE key = ANY($1::text[])", [keys]);
+  const stored = new Map(rows.map((row) => [row.key, row.value?.trim() ?? ""]));
+
+  res.json({
+    events: events.map((event) => {
+      const enabledKey = emailEventSettingKey(event.kind);
+      const noteKey = emailEventSettingKey(event.kind, "note");
+      return {
+        kind: event.kind,
+        label: event.label,
+        description: event.description ?? "",
+        alwaysOn: event.alwaysOn === true,
+        // alwaysOn events carry no switch key at all, so not even a hand-crafted
+        // PUT can turn off password reset or credential delivery.
+        enabledKey: event.alwaysOn === true ? null : enabledKey,
+        defaultEnabled: event.defaultEnabled !== false,
+        enabled: resolveEmailKindEnabled(event, stored.get(enabledKey)),
+        noteKey,
+        note: stored.get(noteKey) ?? "",
+      };
+    }),
+  });
+});
+
+const testEmailSchema = z.object({
+  to: z.string().trim().email(),
+  kind: z.string(),
+  locale: z.enum(["pt", "en", "es"]).default("pt"),
+});
+
+/**
+ * Obviously fake data for the test send: a test that lands in a real inbox must
+ * never read as a real notification. The currency is a fixed fixture value and
+ * is deliberately not derived from the language — currency belongs to the plan,
+ * and guessing it from the locale is precisely the bug we do not want copied.
+ */
+function buildTestEmailFixtures(to, locale) {
+  const application = {
+    id: null,
+    email: to,
+    locale,
+    firstName: "Teste",
+    fullName: "Teste Everwin",
+    submissionCode: "TESTE-0000",
+    planId: "plan_brl_50k",
+    amount: 1497,
+    currency: "BRL",
+    // The generic status template only fires for these three statuses.
+    status: "under_review",
+    paidAt: nowISO(),
+  };
+
+  return {
+    application,
+    plan: { id: "plan_brl_50k", name: "Plano de teste", accountSize: 50000, fee: 1497, currency: "BRL" },
+    payment: { amount: application.amount, currency: application.currency, dueAt: addDays(nowISO(), 3), checkoutUrl: buildLoginUrl() },
+    portalUser: { id: null, email: to, locale },
+    account: {
+      id: null,
+      accountId: "TESTE-ACC-0000",
+      phase: 1,
+      status: "passed",
+      platformLogin: "teste@everwin.capital",
+      platformPassword: "senha-de-teste",
+      notifyEmail: to,
+    },
+  };
+}
+
+/** One entry per toggleable kind: the subject we log plus the sender to run. */
+function buildTestEmailSenders({ locale, note, fixtures }) {
+  const { application, plan, payment, portalUser, account } = fixtures;
+  const statusUrl = buildStatusUrl(application.submissionCode);
+  const loginUrl = buildLoginUrl();
+
+  return {
+    "application.received": {
+      subject: buildApplicationReceivedSubject(application),
+      send: () => sendApplicationReceivedEmail({ application, plan, statusUrl, customNote: note }),
+    },
+    "payment.link.released": {
+      subject: buildPaymentLinkIssuedSubject(application),
+      send: () => sendPaymentLinkIssuedEmail({ application, plan, checkoutUrl: payment.checkoutUrl, statusUrl, customNote: note }),
+    },
+    "payment.pending.reminder": {
+      subject: buildPendingPaymentReminderSubject(application),
+      send: () => sendPendingPaymentReminderEmail({ application, payment, statusUrl, customNote: note }),
+    },
+    "payment.overdue": {
+      subject: buildPaymentOverdueSubject(application),
+      send: () => sendPaymentOverdueEmail({ application, payment, statusUrl, customNote: note }),
+    },
+    "payment.approved": {
+      subject: buildPaymentApprovedSubject(application),
+      send: () => sendPaymentApprovedEmail({ application, plan, statusUrl, customNote: note }),
+    },
+    "submission.status.changed": {
+      subject: buildSubmissionStatusChangedSubject(application),
+      send: () =>
+        sendSubmissionStatusChangedEmail({
+          application,
+          statusLabel: SUBMISSION_STATUS_LABELS[locale]?.[application.status],
+          statusUrl,
+          customNote: note,
+        }),
+    },
+    "account.status.changed": {
+      subject: buildAccountStatusChangedSubject(account, locale),
+      // previousStatus must differ from status or the template skips itself.
+      send: () =>
+        sendAccountStatusChangedEmail({
+          account,
+          previousStatus: "active",
+          statusLabel: ACCOUNT_STATUS_LABELS[locale]?.[account.status],
+          locale,
+          loginUrl,
+          customNote: note,
+        }),
+    },
+    "portal.access.ready": {
+      subject: buildPortalAccessSubject(portalUser),
+      send: () =>
+        sendPortalAccessEmail({
+          application,
+          portalUser,
+          temporaryPassword: "senha-temporaria",
+          loginUrl,
+          statusUrl,
+          customNote: note,
+        }),
+    },
+    "account.credentials.ready": {
+      subject: buildTradingAccountDeliveredSubject(account, locale),
+      send: () => sendTradingAccountDeliveredEmail({ application, portalUser, account, plan, loginUrl, customNote: note }),
+    },
+    "password.otp": {
+      subject:
+        locale === "en"
+          ? "Your Everwin verification code"
+          : locale === "es"
+            ? "Su código de verificación Everwin"
+            : "Seu código de verificação Everwin",
+      send: () => sendOtpEmail({ email: application.email, otp: "000000", locale, loginUrl }),
+    },
+  };
+}
+
+/**
+ * Sends one real e-mail to an address the admin types, so a broken sender domain
+ * surfaces here instead of in a customer's failed signup. It goes through the
+ * normal send-and-log plumbing (the delivery is a row in communication_logs like
+ * any other) but forces the switch open: previewing a disabled template is the
+ * whole point, and a silent skip would look identical to a successful send.
+ */
+app.post("/api/settings/test-email", requireAuth, requireRole("admin"), async (req, res) => {
+  const parsed = testEmailSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    return res.status(400).json({ ok: false, message: "Informe um destinatário válido." });
+  }
+
+  const { to, kind, locale } = parsed.data;
+  const event = EMAIL_EVENT_BY_KIND[kind];
+  if (!event || event.legacy) {
+    return res.status(400).json({ ok: false, message: "Evento desconhecido." });
+  }
+
+  const note = await emailEventNote(kind);
+  const senders = buildTestEmailSenders({ locale, note, fixtures: buildTestEmailFixtures(to, locale) });
+  const target = senders[kind];
+  if (!target) {
+    return res.status(400).json({ ok: false, message: "Este evento não tem um envio de teste." });
+  }
+
+  const sender = await resolveEmailSenderIdentity();
+
+  try {
+    const outcome = await sendAndLogEmail(
+      kind,
+      target.send,
+      { userId: req.authUser.id, recipient: to, subject: target.subject, test: true, locale },
+      { force: true },
+    );
+
+    await audit(req.authUser.id, "SEND_TEST_EMAIL", "system", "settings", { kind, to, locale });
+
+    if (outcome.status !== "sent") {
+      return res.json({
+        ok: false,
+        ...sender,
+        message: "Nenhum e-mail saiu. Confirme se a chave da Resend está configurada no servidor.",
+      });
+    }
+
+    return res.json({
+      ok: true,
+      ...sender,
+      providerMessageId: outcome.providerMessageId ?? null,
+      message: `E-mail de teste enviado para ${to}.`,
+    });
+  } catch (error) {
+    // 200 with ok:false mirrors /settings/test-broker, whose result card this reuses.
+    return res.json({
+      ok: false,
+      ...sender,
+      message: error instanceof Error ? error.message : "Falha ao enviar o e-mail de teste.",
+    });
+  }
+});
+
+/** What the recipient will actually see in the From/Reply-To of a real send. */
+async function resolveEmailSenderIdentity() {
+  const name = await getSystemSettingValue("email_sender_name");
+  const address = await getSystemSettingValue("email_sender_address");
+  const replyTo = (await getSystemSettingValue("email_reply_to")) || config.emailReplyTo || "";
+
+  return {
+    from: name && address ? `${name} <${address}>` : address || config.resendFrom,
+    replyTo,
+  };
+}
 
 // ─── TRADE EVENTS (from Everwin platform webhook) ──────────────────────────────
 
@@ -2181,39 +2891,41 @@ async function handleEverwinWebhook(req, res) {
   let flagged = 0;
   let flagReason = null;
 
-  // Trade completed → update account balance/PnL and evaluate rules
+  // Trade completed → fold the profit into that day's result and re-evaluate.
+  // The daily series is the source of truth, so a trade never writes the balance
+  // directly: it changes its day, and the balance is derived from every day.
   if (eventType === "trade" && accountRow) {
     const profit = Number(payload.profit ?? 0);
     try {
-      // Update today's PnL and balance
-      await query(
-        `UPDATE accounts SET
-          balance = balance + $1,
-          today_pnl = today_pnl + $1,
-          updated_at = $2
-        WHERE id = $3`,
-        [profit, nowISO(), accountRow.id],
-      );
+      const fullRow = await one("SELECT * FROM accounts WHERE id = $1", [accountRow.id]);
+      const planRow = fullRow ? await one("SELECT * FROM plans WHERE id = $1", [fullRow.plan_id]) : null;
+      if (planRow && Number.isFinite(profit)) {
+        const plan = mapPlanRow(planRow);
+        const tradeDate = (payload.completedAt ?? nowISO()).slice(0, 10);
 
-      // Upsert daily performance point
-      const tradeDate = (payload.completedAt ?? nowISO()).slice(0, 10);
-      const updatedAccountRow = await one("SELECT * FROM accounts WHERE id = $1", [accountRow.id]);
-      if (updatedAccountRow) {
-        const account = mapAccountRow(updatedAccountRow, true);
-        const planRow = await one("SELECT * FROM plans WHERE id = $1", [account.planId]);
-        if (planRow) {
-          const plan = mapPlanRow(planRow);
-          const point = appendPerformancePoint(account, plan, {
-            date: tradeDate,
-            pnl: profit,
-            balance: account.balance,
-          });
-          await upsertPerformancePoint(account.id, point);
+        const series = await getPerformanceSeries(accountRow.id);
+        const existing = series.find((p) => p.date === tradeDate);
+        const dayPnl = (existing?.pnl ?? 0) + profit;
 
-          // Evaluate rules (drawdown, daily limit, timeout, etc.)
-          const evaluated = evaluateAccount(account, plan, nowISO());
-          await saveAccount(evaluated);
-        }
+        const initial = Number(fullRow.initial_balance);
+        const dailyLimit = (initial * plan.dailyLossLimitPct) / 100;
+
+        await upsertPerformancePoint(accountRow.id, {
+          date: tradeDate,
+          pnl: dayPnl,
+          // Rewritten by recalcAccountFromSeries once the whole series is known.
+          balance: initial,
+          phase: Number(fullRow.phase),
+          breachedDailyLimit: dayPnl <= -dailyLimit,
+        });
+
+        await recalcAccountFromSeries(fullRow);
+        await reevaluateAccount(accountRow.id);
+      } else {
+        // Silence here is how a trade disappears without anyone noticing.
+        console.warn(
+          `[Webhook] Trade ignored for account ${accountRow.id}: ${planRow ? `invalid profit ${payload.profit}` : "plan not found"}`,
+        );
       }
     } catch (tradeErr) {
       console.error("[Webhook] Trade update failed:", tradeErr instanceof Error ? tradeErr.message : tradeErr);
@@ -2295,6 +3007,145 @@ app.get("/api/accounts/:id/events", requireAuth, requireRole("admin"), async (re
 });
 
 // ─── MANUAL PROVISION TRADING PLATFORM (admin) ────────────────────────────────
+
+// ─── DAILY RESULTS (the admin feeds these; the calendar reads them) ───────────
+
+const dailyResultSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use o formato AAAA-MM-DD."),
+  pnl: z.number().finite(),
+  notes: z.string().optional(),
+});
+
+/**
+ * Rebuilds the account from its own history.
+ *
+ * The daily series is the source of truth: balance is the initial capital plus
+ * every recorded day, and days traded is simply how many days exist. Storing
+ * balance independently let the two drift, which is how a screen ends up
+ * showing a number no record supports.
+ */
+async function recalcAccountFromSeries(accountRow) {
+  const series = await getPerformanceSeries(accountRow.id);
+  const ordered = [...series].sort((a, b) => a.date.localeCompare(b.date));
+
+  const initial = Number(accountRow.initial_balance);
+  let running = initial;
+  let worstDrawdownPct = 0;
+
+  for (const point of ordered) {
+    running += point.pnl;
+    const drawdownPct = Math.max(0, ((initial - running) / initial) * 100);
+    worstDrawdownPct = Math.max(worstDrawdownPct, drawdownPct);
+  }
+
+  const today = nowISO().slice(0, 10);
+  const todayPoint = ordered.find((p) => p.date === today);
+
+  await query(
+    `UPDATE accounts
+        SET balance = $1, today_pnl = $2, days_traded = $3, max_drawdown_hit_pct = $4, updated_at = $5
+      WHERE id = $6`,
+    [running, todayPoint?.pnl ?? 0, ordered.length, worstDrawdownPct, nowISO(), accountRow.id],
+  );
+
+  // Rewrite each day's running balance so the equity curve matches the series.
+  let cumulative = initial;
+  for (const point of ordered) {
+    cumulative += point.pnl;
+    await query("UPDATE performance_points SET balance = $1 WHERE account_id = $2 AND date = $3", [
+      cumulative,
+      accountRow.id,
+      point.date,
+    ]);
+  }
+
+  return { balance: running, daysTraded: ordered.length, maxDrawdownHitPct: worstDrawdownPct };
+}
+
+/** Applies the rules engine after the numbers changed, and mails a real verdict. */
+async function reevaluateAccount(accountId) {
+  const row = await one("SELECT * FROM accounts WHERE id = $1", [accountId]);
+  if (!row) return null;
+
+  const planRow = await one("SELECT * FROM plans WHERE id = $1", [row.plan_id]);
+  if (!planRow) return await getAccountDomainByRow(row, true);
+
+  const previousStatus = row.status;
+  const account = await getAccountDomainByRow(row, true);
+  const evaluated = evaluateAccount(account, mapPlanRow(planRow), nowISO());
+
+  await saveAccount(evaluated);
+  await notifyAccountStatusChange({ account: evaluated, previousStatus });
+
+  const fresh = await one("SELECT * FROM accounts WHERE id = $1", [accountId]);
+  return await getAccountDomainByRow(fresh, true);
+}
+
+app.get("/api/accounts/:id/daily", requireAuth, requireRole("admin"), async (req, res) => {
+  const row = await one("SELECT * FROM accounts WHERE id = $1", [req.params.id]);
+  if (!row) return res.status(404).json({ message: "Account not found." });
+
+  const series = await getPerformanceSeries(row.id);
+  res.json({
+    accountId: row.account_id,
+    initialBalance: Number(row.initial_balance),
+    balance: Number(row.balance),
+    days: [...series].sort((a, b) => b.date.localeCompare(a.date)),
+  });
+});
+
+app.post("/api/accounts/:id/daily", requireAuth, requireRole("admin"), async (req, res) => {
+  const parsed = dailyResultSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: parsed.error.issues[0]?.message ?? "Invalid payload." });
+  }
+
+  const row = await one("SELECT * FROM accounts WHERE id = $1", [req.params.id]);
+  if (!row) return res.status(404).json({ message: "Account not found." });
+
+  const planRow = await one("SELECT * FROM plans WHERE id = $1", [row.plan_id]);
+  if (!planRow) return res.status(404).json({ message: "Plan not found." });
+  const plan = mapPlanRow(planRow);
+
+  const initial = Number(row.initial_balance);
+  const dailyLimit = (initial * plan.dailyLossLimitPct) / 100;
+
+  await upsertPerformancePoint(row.id, {
+    date: parsed.data.date,
+    pnl: parsed.data.pnl,
+    // Rewritten by recalcAccountFromSeries once the whole series is known.
+    balance: initial,
+    phase: Number(row.phase),
+    breachedDailyLimit: parsed.data.pnl <= -dailyLimit,
+  });
+
+  await recalcAccountFromSeries(row);
+  const account = await reevaluateAccount(row.id);
+
+  await audit(req.authUser.id, "RECORD_DAILY_RESULT", "account", row.id, {
+    date: parsed.data.date,
+    pnl: parsed.data.pnl,
+  });
+
+  res.json({ ok: true, account });
+});
+
+app.delete("/api/accounts/:id/daily/:date", requireAuth, requireRole("admin"), async (req, res) => {
+  const row = await one("SELECT * FROM accounts WHERE id = $1", [req.params.id]);
+  if (!row) return res.status(404).json({ message: "Account not found." });
+
+  const result = await query("DELETE FROM performance_points WHERE account_id = $1 AND date = $2", [
+    row.id,
+    req.params.date,
+  ]);
+  if (result.rowCount === 0) return res.status(404).json({ message: "Dia não encontrado." });
+
+  await recalcAccountFromSeries(row);
+  const account = await reevaluateAccount(row.id);
+
+  await audit(req.authUser.id, "DELETE_DAILY_RESULT", "account", row.id, { date: req.params.date });
+  res.json({ ok: true, account });
+});
 
 app.post("/api/accounts/:id/provision-trading", requireAuth, requireRole("admin"), async (req, res) => {
   const accountRow = await one("SELECT * FROM accounts WHERE id = $1", [req.params.id]);
@@ -2734,19 +3585,7 @@ app.post("/api/webhooks/novus", webhookLimiter, async (req, res) => {
       provider: "novus",
     });
 
-    const application = mapApplicationRow(row);
-    const subject =
-      application.locale === "en"
-        ? `Payment confirmed • ${application.submissionCode}`
-        : application.locale === "es"
-          ? `Pago confirmado • ${application.submissionCode}`
-          : `Pagamento confirmado • ${application.submissionCode}`;
-
-    await sendAndLogEmailBestEffort(
-      "payment.approved",
-      () => sendPaymentApprovedEmail({ application, statusUrl: buildStatusUrl(application.submissionCode) }),
-      { applicationId: application.id, recipient: application.email, subject },
-    );
+    // syncPaymentStatus already sent the confirmation — one approval, one e-mail.
 
     await recordEvent("processed", {
       applicationId: row.id,
@@ -3120,11 +3959,26 @@ app.post("/api/platform-users/:id/reset-password", requireAuth, requireRole("adm
 
 /* ─── Vercel Cron Endpoints ─── */
 
-app.get("/api/cron/reminders", async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (process.env.VERCEL && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return res.status(401).json({ message: "Unauthorized" });
+function requireCronAuth(req, res) {
+  // Without a secret the comparison used to read "Bearer undefined", which any
+  // caller can send. Missing secret now closes the job instead of opening it.
+  const secret = process.env.CRON_SECRET;
+  if (!secret) {
+    res.status(503).json({ message: "CRON_SECRET is not configured." });
+    return false;
   }
+  const provided = req.headers.authorization ?? "";
+  const a = Buffer.from(provided, "utf8");
+  const b = Buffer.from(`Bearer ${secret}`, "utf8");
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    res.status(401).json({ message: "Unauthorized" });
+    return false;
+  }
+  return true;
+}
+
+app.get("/api/cron/reminders", async (req, res) => {
+  if (!requireCronAuth(req, res)) return;
   try {
     await ensurePendingPaymentReminders();
     res.json({ ok: true, job: "reminders" });
@@ -3135,10 +3989,7 @@ app.get("/api/cron/reminders", async (req, res) => {
 });
 
 app.get("/api/cron/daily-sync", async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (process.env.VERCEL && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return res.status(401).json({ message: "Unauthorized" });
-  }
+  if (!requireCronAuth(req, res)) return;
   try {
     await runDailyAccountSync("cron");
     res.json({ ok: true, job: "daily-sync" });
