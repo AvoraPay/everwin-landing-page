@@ -279,6 +279,9 @@ export interface UpdateAccountInput {
   phase?: AccountPhase;
   platformLogin?: string;
   platformPassword?: string;
+  platformEmail?: string;
+  /** Broker user id that routes trade webhooks here. Empty string unlinks it. */
+  platformUserId?: string;
   brokerName?: string;
 }
 

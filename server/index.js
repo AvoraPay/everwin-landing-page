@@ -1213,6 +1213,11 @@ const updateAccountSchema = z.object({
   notes: z.string().nullable().optional(),
   platformLogin: z.string().min(1).optional(),
   platformPassword: z.string().min(1).optional(),
+  platformEmail: z.string().optional().or(z.literal("")),
+  // The broker's user id routes trade webhooks into this account. Pointing it at
+  // the wrong user posts someone else's results here, so it has to be editable
+  // — and clearable, with an empty string.
+  platformUserId: z.string().optional().or(z.literal("")),
   brokerName: z.string().optional().or(z.literal("")),
   status: z
     .enum([
@@ -2476,17 +2481,17 @@ app.patch("/api/accounts/:id", requireAuth, requireRole("admin"), async (req, re
   await notifyAccountStatusChange({ account: evaluated, previousStatus: current.status });
 
   // Update credentials if provided
-  if (parsed.data.platformLogin || parsed.data.platformPassword || parsed.data.brokerName !== undefined) {
-    const credUpdates = [];
-    const credValues = [];
-    let idx = 1;
-    if (parsed.data.platformLogin) { credUpdates.push(`platform_login = $${idx++}`); credValues.push(parsed.data.platformLogin.trim()); }
-    if (parsed.data.platformPassword) { credUpdates.push(`platform_password_enc = $${idx++}`); credValues.push(encryptSecret(parsed.data.platformPassword)); }
-    if (parsed.data.brokerName !== undefined) { credUpdates.push(`broker_name = $${idx++}`); credValues.push(parsed.data.brokerName || null); }
+  const credUpdates = [];
+  const credValues = [];
+  let idx = 1;
+  if (parsed.data.platformLogin) { credUpdates.push(`platform_login = $${idx++}`); credValues.push(parsed.data.platformLogin.trim()); }
+  if (parsed.data.platformPassword) { credUpdates.push(`platform_password_enc = $${idx++}`); credValues.push(encryptSecret(parsed.data.platformPassword)); }
+  if (parsed.data.platformEmail !== undefined) { credUpdates.push(`platform_email = $${idx++}`); credValues.push(parsed.data.platformEmail.trim() || null); }
+  if (parsed.data.platformUserId !== undefined) { credUpdates.push(`platform_user_id = $${idx++}`); credValues.push(parsed.data.platformUserId.trim() || null); }
+  if (parsed.data.brokerName !== undefined) { credUpdates.push(`broker_name = $${idx++}`); credValues.push(parsed.data.brokerName || null); }
+  if (credUpdates.length > 0) {
     credValues.push(evaluated.id);
-    if (credUpdates.length > 0) {
-      await query(`UPDATE accounts SET ${credUpdates.join(", ")} WHERE id = $${idx}`, credValues);
-    }
+    await query(`UPDATE accounts SET ${credUpdates.join(", ")} WHERE id = $${idx}`, credValues);
   }
 
   await audit(req.authUser.id, "UPDATE_ACCOUNT", "account", evaluated.id, parsed.data);

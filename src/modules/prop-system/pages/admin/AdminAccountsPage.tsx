@@ -120,6 +120,8 @@ export function AdminAccountsPage() {
     daysTraded: "",
     platformLogin: "",
     platformPassword: "",
+    platformEmail: "",
+    platformUserId: "",
     brokerName: "",
     notes: "",
   });
@@ -217,6 +219,8 @@ export function AdminAccountsPage() {
       daysTraded: String(selectedAccount.account.daysTraded),
       platformLogin: selectedAccount.account.platformLogin,
       platformPassword: selectedAccount.account.platformPassword,
+      platformEmail: selectedAccount.account.platformEmail ?? "",
+      platformUserId: selectedAccount.account.platformUserId ?? "",
       brokerName: selectedAccount.account.brokerName ?? "",
       notes: selectedAccount.account.notes ?? "",
     });
@@ -297,6 +301,8 @@ export function AdminAccountsPage() {
       daysTraded: Number(editState.daysTraded),
       platformLogin: editState.platformLogin,
       platformPassword: editState.platformPassword,
+      platformEmail: editState.platformEmail,
+      platformUserId: editState.platformUserId,
       brokerName: editState.brokerName || undefined,
       notes: editState.notes || undefined,
     });
@@ -844,6 +850,27 @@ export function AdminAccountsPage() {
                     value={editState.platformPassword}
                     onChange={(event) => setEditState((current) => ({ ...current, platformPassword: event.target.value }))}
                     className="h-10 rounded-xl border-slate-200 bg-slate-50 dark:border-white/[0.07] dark:bg-white/[0.04] dark:text-white"
+                  />
+                </PortalField>
+
+                <PortalField label="E-mail na corretora">
+                  <Input
+                    value={editState.platformEmail}
+                    onChange={(event) => setEditState((current) => ({ ...current, platformEmail: event.target.value }))}
+                    placeholder="ex.: ewp25k021@everwin.capital"
+                    className="h-10 rounded-xl border-slate-200 bg-slate-50 dark:border-white/[0.07] dark:bg-white/[0.04] dark:text-white"
+                  />
+                </PortalField>
+
+                <PortalField
+                  label="ID do usuário na corretora"
+                  hint="Roteia os trades recebidos por webhook para esta conta. Vazio = não vinculada."
+                >
+                  <Input
+                    value={editState.platformUserId}
+                    onChange={(event) => setEditState((current) => ({ ...current, platformUserId: event.target.value }))}
+                    placeholder="everwin_..."
+                    className="h-10 rounded-xl border-slate-200 bg-slate-50 font-mono text-xs dark:border-white/[0.07] dark:bg-white/[0.04] dark:text-white"
                   />
                 </PortalField>
               </div>
