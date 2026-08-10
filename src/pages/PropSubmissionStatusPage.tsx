@@ -81,6 +81,7 @@ const COPY = {
     fieldPassword: "Senha",
     copy: "Copiar",
     copied: "Copiado",
+    revealClosed: "Os dados de acesso já foram entregues. Use \"Esqueci minha senha\" na tela de login.",
     passwordChanged: "Você já definiu uma senha própria. Se esqueceu, use \"Esqueci minha senha\" na tela de login.",
     passwordUnavailable: "A senha não está disponível aqui. Use \"Esqueci minha senha\" na tela de login.",
   },
@@ -139,6 +140,7 @@ const COPY = {
     fieldPassword: "Password",
     copy: "Copy",
     copied: "Copied",
+    revealClosed: "The access details were already delivered. Use \"Forgot password\" on the login screen.",
     passwordChanged: "You already set your own password. If you forgot it, use \"Forgot password\" on the login screen.",
     passwordUnavailable: "The password is not available here. Use \"Forgot password\" on the login screen.",
   },
@@ -197,6 +199,7 @@ const COPY = {
     fieldPassword: "Contraseña",
     copy: "Copiar",
     copied: "Copiado",
+    revealClosed: "Los datos de acceso ya fueron entregados. Usa \"Olvidé mi contraseña\" en la pantalla de inicio de sesión.",
     passwordChanged: "Ya definiste tu propia contraseña. Si la olvidaste, usa \"Olvidé mi contraseña\" en la pantalla de inicio de sesión.",
     passwordUnavailable: "La contraseña no está disponible aquí. Usa \"Olvidé mi contraseña\" en la pantalla de inicio de sesión.",
   },
@@ -323,6 +326,9 @@ export default function PropSubmissionStatusPage() {
 
   const hasCheckoutLink = Boolean(bundle?.payment?.checkoutUrl);
   const portalUrl = credentials?.loginUrl ?? bundle?.loginUrl ?? `${window.location.origin}/prop/login`;
+  // The page is public by design; the credentials are not. Once delivered, the
+  // challenge disappears entirely — typing the right email no longer helps.
+  const canReveal = bundle?.credentialsRevealAvailable !== false;
 
   return (
     <div className="min-h-screen bg-[linear-gradient(187deg,rgb(246,247,249)_-24%,rgb(224,227,235)_100%)] px-4 pb-24 pt-[120px] md:pt-[150px]">
@@ -473,7 +479,7 @@ export default function PropSubmissionStatusPage() {
                         >
                           {copy.goLogin}
                         </Link>
-                        {!credentials ? (
+                        {!credentials && canReveal ? (
                           <button
                             type="button"
                             onClick={() => setChallengeOpen(true)}
@@ -482,6 +488,9 @@ export default function PropSubmissionStatusPage() {
                             <Eye className="h-4 w-4" />
                             {copy.revealTitle}
                           </button>
+                        ) : null}
+                        {!credentials && !canReveal ? (
+                          <span className="font-bricolage_grotesque text-sm text-slate-500">{copy.revealClosed}</span>
                         ) : null}
                       </div>
                     </div>
@@ -536,19 +545,21 @@ export default function PropSubmissionStatusPage() {
                 <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-[0_26px_70px_-54px_rgba(15,23,42,0.45)]">
                   <div className="flex items-start justify-between gap-3">
                     <h2 className="font-bricolage_grotesque text-2xl font-bold text-slate-900">{copy.summary}</h2>
-                    <button
-                      type="button"
-                      onClick={() => (revealed ? hideData() : setChallengeOpen((open) => !open))}
-                      aria-pressed={revealed}
-                      title={revealed ? copy.hideData : copy.showData}
-                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-400 transition hover:border-slate-300 hover:text-slate-700"
-                    >
-                      {revealed ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      <span className="sr-only">{revealed ? copy.hideData : copy.showData}</span>
-                    </button>
+                    {revealed || canReveal ? (
+                      <button
+                        type="button"
+                        onClick={() => (revealed ? hideData() : setChallengeOpen((open) => !open))}
+                        aria-pressed={revealed}
+                        title={revealed ? copy.hideData : copy.showData}
+                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-400 transition hover:border-slate-300 hover:text-slate-700"
+                      >
+                        {revealed ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        <span className="sr-only">{revealed ? copy.hideData : copy.showData}</span>
+                      </button>
+                    ) : null}
                   </div>
 
-                  {challengeOpen && !revealed ? (
+                  {challengeOpen && !revealed && canReveal ? (
                     <div className="mb-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
                       <p className="font-bricolage_grotesque text-xs leading-5 text-slate-600">{copy.revealDesc}</p>
                       <div className="mt-3 flex flex-wrap gap-2">

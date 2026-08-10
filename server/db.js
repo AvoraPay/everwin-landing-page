@@ -283,6 +283,19 @@ async function createSchema() {
   await exec(`
     ALTER TABLE applications ADD COLUMN IF NOT EXISTS public_tracking_disabled BOOLEAN NOT NULL DEFAULT FALSE;
   `);
+  // Credential delivery is a one-shot: the reveal exists only for the window
+  // between provisioning and the trader's first login. Leaving it open forever
+  // turns a known email address into a way to read someone else's password.
+  await exec(`
+    ALTER TABLE applications ADD COLUMN IF NOT EXISTS credentials_reveal_disabled BOOLEAN NOT NULL DEFAULT FALSE;
+  `);
+  // Anyone provisioned before this column existed already has portal access, so
+  // their reveal window is closed too — it has nothing left to deliver.
+  await exec(`
+    UPDATE applications SET credentials_reveal_disabled = TRUE
+     WHERE credentials_reveal_disabled = FALSE
+       AND status IN ('access_ready','account_ready');
+  `);
   // Consistency: no single day may be worth more than this share of the total
   // profit. It is what separates a trader who compounds from one who spiked
   // once. 0 disables the rule for that plan.
@@ -671,6 +684,7 @@ export function mapApplicationRow(row) {
     reviewedAt: row.reviewed_at ?? undefined,
     adminNotes: row.admin_notes ?? undefined,
     publicTrackingDisabled: Boolean(row.public_tracking_disabled),
+    credentialsRevealDisabled: Boolean(row.credentials_reveal_disabled),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

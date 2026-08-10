@@ -177,6 +177,8 @@ export interface PropSubmission {
   adminNotes?: string;
   /** True hides the public tracking page for this application. */
   publicTrackingDisabled?: boolean;
+  /** True stops the page from handing back the credentials, page still opens. */
+  credentialsRevealDisabled?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -211,6 +213,8 @@ export interface PublicSubmissionBundle {
   canAccessPortal: boolean;
   /** True once a portal user exists — the password itself never travels here. */
   hasPortalPassword?: boolean;
+  /** False once the credentials were delivered: the page opens, the data does not. */
+  credentialsRevealAvailable?: boolean;
   vacanciesLocked?: boolean;
   vacanciesMessage?: string;
 }

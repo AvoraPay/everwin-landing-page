@@ -470,7 +470,7 @@ export async function provisionSubmissionAccessApi(
  */
 export async function setPublicTrackingApi(
   applicationId: string,
-  input: { disabled: boolean; rotateCode?: boolean },
+  input: { disabled: boolean; rotateCode?: boolean; revealDisabled?: boolean },
 ): Promise<{ ok: true; disabled: boolean; submissionCode: string }> {
   return request<{ ok: true; disabled: boolean; submissionCode: string }>(
     `/submissions/${applicationId}/public-tracking`,

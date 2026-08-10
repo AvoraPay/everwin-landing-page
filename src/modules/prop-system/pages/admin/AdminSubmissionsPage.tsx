@@ -614,6 +614,31 @@ export function AdminSubmissionsPage() {
                 </code>
               </div>
 
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <PortalStatusPill tone={selectedItem.application.credentialsRevealDisabled ? "success" : "warning"}>
+                  {selectedItem.application.credentialsRevealDisabled
+                    ? "credenciais já entregues"
+                    : "entrega de credenciais aberta"}
+                </PortalStatusPill>
+                <button
+                  type="button"
+                  disabled={busyAction === "tracking"}
+                  onClick={() =>
+                    void runAction("tracking", async () => {
+                      await setPublicTrackingApi(selectedItem.application.id, {
+                        disabled: Boolean(selectedItem.application.publicTrackingDisabled),
+                        revealDisabled: !selectedItem.application.credentialsRevealDisabled,
+                      });
+                    })
+                  }
+                  className="text-xs font-medium text-slate-500 underline underline-offset-4 transition hover:text-slate-800 disabled:opacity-40 dark:text-white/40 dark:hover:text-white/70"
+                >
+                  {selectedItem.application.credentialsRevealDisabled
+                    ? "Reabrir entrega de credenciais"
+                    : "Fechar entrega de credenciais"}
+                </button>
+              </div>
+
               <div className="mt-4 flex flex-wrap gap-2">
                 {selectedItem.application.publicTrackingDisabled ? (
                   <Button
@@ -663,8 +688,9 @@ export function AdminSubmissionsPage() {
               </div>
 
               <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-white/40">
-                Trocar o código mata qualquer link já compartilhado. Fechar sem trocar mantém o código, que volta a
-                funcionar se você reabrir.
+                A entrega de credenciais fecha sozinha assim que o candidato revela os dados uma vez — a partir daí,
+                nem quem souber o e-mail dele consegue ver a senha. Fechar a página inteira devolve 404. Trocar o
+                código mata qualquer link já compartilhado.
               </p>
             </PortalSection>
 

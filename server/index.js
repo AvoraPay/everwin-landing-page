@@ -1624,6 +1624,9 @@ app.get("/api/public/submissions/:code", statusLimiter, async (req, res) => {
     loginUrl: buildLoginUrl(),
     canAccessPortal: Boolean(bundle.user && ["access_ready", "account_ready"].includes(bundle.application.status)),
     hasPortalPassword: Boolean(bundle.user),
+    // The page always renders. What it will not do is hand the credentials to
+    // whoever guesses the email — once delivered, that door stays shut.
+    credentialsRevealAvailable: Boolean(bundle.user) && !bundle.application.credentialsRevealDisabled,
     vacanciesLocked,
     vacanciesMessage,
   });
@@ -1643,6 +1646,16 @@ app.post("/api/public/submissions/:code/reveal", revealLimiter, async (req, res)
   const bundle = await getSubmissionBundleByCode(req.params.code);
   if (!bundle || bundle.application.publicTrackingDisabled) {
     return res.status(404).json({ message: "Submission not found." });
+  }
+
+  // Refused before the email is even compared, so a closed reveal cannot be used
+  // to test whether a guessed address belongs to this application.
+  if (bundle.application.credentialsRevealDisabled) {
+    return res.status(403).json({
+      message:
+        "Os dados de acesso já foram entregues. Use \"Esqueci minha senha\" na tela de login para recuperá-los.",
+      passwordState: "already_delivered",
+    });
   }
 
   const expected = normalizeEmail(bundle.application.email ?? "");
@@ -1670,6 +1683,13 @@ app.post("/api/public/submissions/:code/reveal", revealLimiter, async (req, res)
       passwordState = "changed_by_user";
     }
   }
+
+  // Delivered once, and only once. The trader now has the password and a
+  // password-reset flow; a second reveal would only ever serve someone else.
+  await query("UPDATE applications SET credentials_reveal_disabled = TRUE, updated_at = $1 WHERE id = $2", [
+    nowISO(),
+    bundle.application.id,
+  ]);
 
   await audit(bundle.user?.id ?? null, "REVEAL_SUBMISSION_CREDENTIALS", "application", bundle.application.id, {
     submissionCode: bundle.application.submissionCode,
@@ -2298,6 +2318,8 @@ app.post("/api/submissions/:id/release-payment", requireAuth, requireRole("admin
 app.post("/api/submissions/:id/public-tracking", requireAuth, requireRole("admin"), async (req, res) => {
   const disabled = req.body?.disabled !== false;
   const rotateCode = req.body?.rotateCode === true;
+  // Independent switch: the page can stay open while credential delivery is shut.
+  const revealDisabled = req.body?.revealDisabled;
 
   const row = await one("SELECT * FROM applications WHERE id = $1", [req.params.id]);
   if (!row) return res.status(404).json({ message: "Submission not found." });
@@ -2318,8 +2340,13 @@ app.post("/api/submissions/:id/public-tracking", requireAuth, requireRole("admin
   }
 
   await query(
-    "UPDATE applications SET public_tracking_disabled = $1, submission_code = $2, updated_at = $3 WHERE id = $4",
-    [disabled, submissionCode, nowISO(), req.params.id],
+    `UPDATE applications
+        SET public_tracking_disabled = $1,
+            submission_code = $2,
+            credentials_reveal_disabled = COALESCE($3, credentials_reveal_disabled),
+            updated_at = $4
+      WHERE id = $5`,
+    [disabled, submissionCode, typeof revealDisabled === "boolean" ? revealDisabled : null, nowISO(), req.params.id],
   );
 
   await audit(req.authUser.id, "SET_PUBLIC_TRACKING", "application", req.params.id, {
