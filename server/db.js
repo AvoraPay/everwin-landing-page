@@ -278,6 +278,17 @@ async function createSchema() {
   await exec(`
     ALTER TABLE users ADD COLUMN IF NOT EXISTS portal_password_enc TEXT;
   `);
+  // Once the trader is inside the portal, the public tracking page has served
+  // its purpose and only remains as a way for someone else to read the record.
+  await exec(`
+    ALTER TABLE applications ADD COLUMN IF NOT EXISTS public_tracking_disabled BOOLEAN NOT NULL DEFAULT FALSE;
+  `);
+  // Consistency: no single day may be worth more than this share of the total
+  // profit. It is what separates a trader who compounds from one who spiked
+  // once. 0 disables the rule for that plan.
+  await exec(`
+    ALTER TABLE plans ADD COLUMN IF NOT EXISTS consistency_rule_pct REAL NOT NULL DEFAULT 10;
+  `);
   // A code that can be retried forever is a six-digit password with no lockout.
   await exec(`
     ALTER TABLE password_otps ADD COLUMN IF NOT EXISTS attempts INTEGER NOT NULL DEFAULT 0;
@@ -561,6 +572,7 @@ export function mapPlanRow(row) {
     dailyLossLimitPct: Number(row.daily_loss_limit_pct),
     minTradingDays: Number(row.min_trading_days),
     durationDays: Number(row.duration_days),
+    consistencyRulePct: Number(row.consistency_rule_pct ?? 0),
   };
 }
 
@@ -658,6 +670,7 @@ export function mapApplicationRow(row) {
     paidAt: row.paid_at ?? undefined,
     reviewedAt: row.reviewed_at ?? undefined,
     adminNotes: row.admin_notes ?? undefined,
+    publicTrackingDisabled: Boolean(row.public_tracking_disabled),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

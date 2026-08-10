@@ -209,6 +209,28 @@ export async function fetchPlansApi(): Promise<PlanTemplate[]> {
   return data.plans;
 }
 
+/** Edits only the evaluation rules; every account on the plan is re-graded. */
+export async function updatePlanRulesApi(
+  planId: string,
+  rules: Partial<
+    Pick<
+      PlanTemplate,
+      | "profitTargetPhase1Pct"
+      | "profitTargetPhase2Pct"
+      | "maxDrawdownPct"
+      | "dailyLossLimitPct"
+      | "minTradingDays"
+      | "durationDays"
+      | "consistencyRulePct"
+    >
+  >,
+): Promise<{ plan: PlanTemplate; reevaluatedAccounts: number }> {
+  return request<{ plan: PlanTemplate; reevaluatedAccounts: number }>(`/plans/${planId}`, {
+    method: "PATCH",
+    body: JSON.stringify(rules),
+  });
+}
+
 export async function fetchUsersApi(): Promise<PropUser[]> {
   const data = await request<{ users: PropUser[] }>("/users", { method: "GET" });
   return data.users;
@@ -440,6 +462,20 @@ export async function provisionSubmissionAccessApi(
     method: "POST",
     body: JSON.stringify(input ?? {}),
   });
+}
+
+/**
+ * Closes or reopens the public tracking page of an application.
+ * Rotating the code is what kills a URL already shared with someone else.
+ */
+export async function setPublicTrackingApi(
+  applicationId: string,
+  input: { disabled: boolean; rotateCode?: boolean },
+): Promise<{ ok: true; disabled: boolean; submissionCode: string }> {
+  return request<{ ok: true; disabled: boolean; submissionCode: string }>(
+    `/submissions/${applicationId}/public-tracking`,
+    { method: "POST", body: JSON.stringify(input) },
+  );
 }
 
 export async function releasePaymentLinkApi(

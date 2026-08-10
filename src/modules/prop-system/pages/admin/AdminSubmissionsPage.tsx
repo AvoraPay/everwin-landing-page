@@ -6,6 +6,7 @@ import {
   KeyRound,
   RefreshCw,
   SearchCheck,
+  EyeOff,
   ShieldCheck,
   UserRoundCheck,
   Wallet,
@@ -22,6 +23,7 @@ import {
   provisionSubmissionAccessApi,
   releasePaymentLinkApi,
   resetPlatformPasswordApi,
+  setPublicTrackingApi,
   updateSubmissionPaymentApi,
   updateSubmissionStatusApi,
 } from "../../api";
@@ -596,6 +598,74 @@ export function AdminSubmissionsPage() {
                   {selectedItem.application.agreeLiability ? "Responsabilidade aceita" : "Responsabilidade pendente"}
                 </span>
               </div>
+            </PortalSection>
+
+            {/* Public tracking */}
+            <PortalSection
+              title="Página pública de acompanhamento"
+              description="Quem tem o código abre esta inscrição sem login. Feche quando o candidato já estiver no portal."
+            >
+              <div className="flex flex-wrap items-center gap-3">
+                <PortalStatusPill tone={selectedItem.application.publicTrackingDisabled ? "success" : "warning"}>
+                  {selectedItem.application.publicTrackingDisabled ? "fechada" : "aberta"}
+                </PortalStatusPill>
+                <code className="rounded-lg bg-slate-100 px-2 py-1 font-mono text-xs text-slate-700 dark:bg-white/[0.06] dark:text-white/70">
+                  {selectedItem.application.submissionCode}
+                </code>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {selectedItem.application.publicTrackingDisabled ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-9 rounded-xl"
+                    disabled={busyAction === "tracking"}
+                    onClick={() =>
+                      void runAction("tracking", async () => {
+                        await setPublicTrackingApi(selectedItem.application.id, { disabled: false });
+                      })
+                    }
+                  >
+                    Reabrir página pública
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-9 rounded-xl"
+                      disabled={busyAction === "tracking"}
+                      onClick={() =>
+                        void runAction("tracking", async () => {
+                          await setPublicTrackingApi(selectedItem.application.id, { disabled: true });
+                        })
+                      }
+                    >
+                      <EyeOff className="mr-2 h-4 w-4" />
+                      Fechar página pública
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-9 rounded-xl"
+                      disabled={busyAction === "tracking"}
+                      onClick={() =>
+                        void runAction("tracking", async () => {
+                          await setPublicTrackingApi(selectedItem.application.id, { disabled: true, rotateCode: true });
+                        })
+                      }
+                    >
+                      Fechar e trocar o código
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-white/40">
+                Trocar o código mata qualquer link já compartilhado. Fechar sem trocar mantém o código, que volta a
+                funcionar se você reabrir.
+              </p>
             </PortalSection>
 
             {/* Timeline */}

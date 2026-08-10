@@ -394,8 +394,15 @@ export function ClientPortalPage() {
   const snapshot = analytics?.snapshot ?? null;
 
   const profit = account ? account.balance - account.initialBalance : 0;
-  const targetMoney = snapshot && account ? (snapshot.targetPct / 100) * account.initialBalance : 0;
-  const targetPct = snapshot ? Math.max(0, Math.min(100, (snapshot.profitPct / snapshot.targetPct) * 100)) : 0;
+  // The effective target, not the nominal one: the consistency rule can raise it
+  // above the plan's headline percentage, and the trader has to see that number.
+  const targetMoney = snapshot ? snapshot.effectiveTargetMoney : 0;
+  const nominalTargetMoney = snapshot ? snapshot.nominalTargetMoney : 0;
+  const targetPct =
+    snapshot && targetMoney > 0
+      ? Math.max(0, Math.min(100, ((account ? account.balance - account.initialBalance : 0) / targetMoney) * 100))
+      : 0;
+  const consistencyLifted = snapshot ? snapshot.effectiveTargetMoney > snapshot.nominalTargetMoney + 0.01 : false;
 
   const ddLeft = snapshot ? Math.min(Math.max(snapshot.remainingDrawdownBeforeBreach, 0), snapshot.maxAllowedLoss) : 0;
   const ddPct = snapshot && snapshot.maxAllowedLoss > 0 ? Math.min((ddLeft / snapshot.maxAllowedLoss) * 100, 100) : 0;
@@ -516,7 +523,11 @@ export function ClientPortalPage() {
                 <Meter
                   label="Falta para a meta"
                   headline={money(Math.max(targetMoney - profit, 0))}
-                  hint={`Meta da fase ${account.phase}: ${snapshot.targetPct}% · ${money(targetMoney)}`}
+                  hint={
+                    consistencyLifted
+                      ? `Meta ajustada pela consistência: ${money(targetMoney)} (nominal ${money(nominalTargetMoney)})`
+                      : `Meta da fase ${account.phase}: ${snapshot.targetPct}% · ${money(targetMoney)}`
+                  }
                   pct={targetPct}
                   tone={targetPct >= 100 ? "good" : "warn"}
                 />
@@ -535,6 +546,53 @@ export function ClientPortalPage() {
                   tone={tone(dayPct)}
                 />
               </div>
+
+              {snapshot.consistencyRulePct > 0 ? (
+                <div className={cn(CARD, "mt-4 p-5")}>
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <p className={LABEL}>Consistência — máximo {snapshot.consistencyRulePct}% por dia</p>
+                    <p
+                      className={cn(
+                        "font-bricolage_grotesque text-sm font-semibold tabular-nums",
+                        snapshot.isConsistencyMet ? "text-emerald-400" : "text-amber-400",
+                      )}
+                    >
+                      {snapshot.bestDayProfit > 0 ? `${snapshot.consistencyPct.toFixed(1)}%` : "—"}
+                    </p>
+                  </div>
+
+                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div
+                      className={cn(
+                        "h-full rounded-full transition-all duration-500",
+                        snapshot.isConsistencyMet ? "bg-emerald-400" : "bg-amber-400",
+                      )}
+                      style={{
+                        width: `${Math.min(100, snapshot.bestDayProfit > 0 ? (snapshot.consistencyRulePct / Math.max(snapshot.consistencyPct, snapshot.consistencyRulePct)) * 100 : 100)}%`,
+                      }}
+                    />
+                  </div>
+
+                  <p className="mt-3 font-bricolage_grotesque text-[13px] leading-6 text-white/45">
+                    {snapshot.bestDayProfit <= 0 ? (
+                      <>Nenhum dia positivo ainda. A regra passa a valer no seu primeiro dia de lucro.</>
+                    ) : snapshot.isConsistencyMet ? (
+                      <>
+                        Seu melhor dia foi {money(snapshot.bestDayProfit)} e representa{" "}
+                        {snapshot.consistencyPct.toFixed(1)}% do lucro acumulado — dentro do limite de{" "}
+                        {snapshot.consistencyRulePct}%.
+                      </>
+                    ) : (
+                      <>
+                        Seu melhor dia foi {money(snapshot.bestDayProfit)}. Para ele caber no limite de{" "}
+                        {snapshot.consistencyRulePct}%, o lucro total precisa chegar a{" "}
+                        {money(snapshot.requiredTotalProfit)} — por isso a meta subiu. O dia não é anulado nem
+                        punido: ele só deixa de bastar sozinho.
+                      </>
+                    )}
+                  </p>
+                </div>
+              ) : null}
 
               <div className="mt-4 grid gap-4 sm:grid-cols-3">
                 <div className={cn(CARD, "p-5")}>

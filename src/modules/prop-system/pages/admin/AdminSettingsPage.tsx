@@ -6,6 +6,7 @@ import { Textarea } from "../../../../components/ui/textarea";
 import { cn } from "../../../../lib/utils";
 import { fetchSettingsApi, testBrokerConnectionApi, updateSettingsApi } from "../../api";
 import type { BrokerConnectionStatus, SystemSetting } from "../../types";
+import { PlanRulesPanel } from "./PlanRulesPanel";
 import {
   PortalPageHeader,
   PortalSection,
@@ -406,6 +407,9 @@ export function AdminSettingsPage() {
               </Button>
             </div>
           </PortalSection>
+
+          {/* The admin portal is Portuguese throughout, like the client portal. */}
+          <PlanRulesPanel language="pt-BR" />
         </div>
       )}
     </div>

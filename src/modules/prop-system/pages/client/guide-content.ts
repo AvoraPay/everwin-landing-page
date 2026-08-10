@@ -360,10 +360,65 @@ export const GUIDE_TOPICS: GuideTopic[] = [
     ],
   },
   {
+    id: "regra-de-consistencia",
+    group: "Os limites de risco",
+    title: "A regra de consistência",
+    summary: "Um único dia não pode carregar a fase inteira",
+    body: ({ plan, account, money }) => {
+      const rule = plan.consistencyRulePct ?? 0;
+      if (rule <= 0) {
+        return [
+          {
+            heading: "Desativada no seu plano",
+            text: "Seu plano não aplica limite de participação por dia. A meta é o número fixo da fase.",
+          },
+        ];
+      }
+
+      const exampleDay = (plan.dailyLossLimitPct / 100) * account.initialBalance;
+      const exampleRequired = exampleDay / (rule / 100);
+
+      return [
+        {
+          heading: "A regra",
+          text: `Nenhum dia isolado pode representar mais de ${rule}% do seu lucro acumulado. A conta do sistema é direta: melhor dia dividido pelo lucro total precisa ficar em ${rule}% ou menos.`,
+        },
+        {
+          heading: "Por que ela existe",
+          text: "Uma avaliação mede método, e método aparece na repetição. Bater a meta inteira num pregão excepcional prova sorte, tamanho de posição ou um evento de mercado — não um processo que se repete no mês seguinte com o capital da mesa.",
+        },
+        {
+          heading: "O que acontece quando você passa do limite",
+          text: `A meta deixa de ser um número fixo e passa a ser calculada: melhor dia dividido por ${rule}%. Ela sobe até que aquele dia caiba na regra. Num dia de ${money(exampleDay)}, por exemplo, o lucro total exigido vira ${money(exampleRequired)}.`,
+        },
+        {
+          heading: "O dia bom não é apagado nem punido",
+          text: "O lucro daquele dia continua inteiro no seu saldo e conta para a meta como qualquer outro. O que muda é só que ele deixa de bastar sozinho: a regra pede que o resto do resultado o acompanhe.",
+        },
+        {
+          heading: "Como voltar ao limite",
+          text: "Somando dias menores. O melhor dia fica onde está e o lucro total cresce, então a participação dele cai naturalmente. Não existe como reduzir o numerador — só como aumentar o denominador.",
+        },
+        {
+          heading: "Ela nunca reprova a sua conta",
+          text: `A regra de consistência não encerra avaliação, não gera cooldown e não é violação. Ela apenas segura a conclusão da fase até a proporção fechar. Quem reprova continua sendo o drawdown e o prazo.`,
+        },
+        {
+          heading: "Quantos dias isso implica",
+          text: `Com o limite em ${rule}%, se todos os seus dias rendessem igual você precisaria de pelo menos ${Math.ceil(100 / rule)} dias positivos para a proporção fechar — acima dos ${plan.minTradingDays} dias mínimos. Na prática, dias desiguais mudam essa conta: o que importa é a proporção, não a contagem.`,
+        },
+        {
+          heading: "Onde acompanhar",
+          text: "A aba Risco mostra o seu melhor dia, a participação dele no lucro acumulado e, quando for o caso, a meta já ajustada. O número exibido lá é o mesmo que o servidor usa para decidir.",
+        },
+      ];
+    },
+  },
+  {
     id: "consistencia",
     group: "Os limites de risco",
-    title: "Consistência",
-    summary: "O que a mesa observa além dos limites",
+    title: "O que a mesa observa",
+    summary: "Além dos limites, o comportamento",
     body: ({ plan, money, account }) => [
       {
         heading: "Distribuição do resultado",

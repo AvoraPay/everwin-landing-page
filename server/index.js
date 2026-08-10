@@ -1547,7 +1547,11 @@ function maskTail(value, keep = 2) {
 
 app.get("/api/public/submissions/:code", statusLimiter, async (req, res) => {
   const bundle = await getSubmissionBundleByCode(req.params.code);
-  if (!bundle) return res.status(404).json({ message: "Submission not found." });
+  // A closed application answers exactly like one that never existed: telling a
+  // visitor "this exists but is closed" already confirms the person applied.
+  if (!bundle || bundle.application.publicTrackingDisabled) {
+    return res.status(404).json({ message: "Submission not found." });
+  }
   const vacanciesLocked = await areVacanciesLocked();
   const vacanciesMessage = await getVacanciesMessage();
 
@@ -1637,7 +1641,9 @@ app.post("/api/public/submissions/:code/reveal", revealLimiter, async (req, res)
   if (!email) return res.status(400).json({ message: "Informe o e-mail usado na inscrição." });
 
   const bundle = await getSubmissionBundleByCode(req.params.code);
-  if (!bundle) return res.status(404).json({ message: "Submission not found." });
+  if (!bundle || bundle.application.publicTrackingDisabled) {
+    return res.status(404).json({ message: "Submission not found." });
+  }
 
   const expected = normalizeEmail(bundle.application.email ?? "");
   const a = Buffer.from(email, "utf8");
@@ -1900,6 +1906,69 @@ app.get("/api/auth/me", requireAuth, (req, res) => {
 
 app.get("/api/plans", requireAuth, async (_req, res) => {
   res.json({ plans: await getPlans() });
+});
+
+// Only the evaluation rules are editable here. Account size, fee and currency
+// are what the trader bought, and changing those under a live account would
+// rewrite the deal after the fact.
+const planRulesSchema = z.object({
+  profitTargetPhase1Pct: z.number().min(0).max(100).optional(),
+  profitTargetPhase2Pct: z.number().min(0).max(100).optional(),
+  maxDrawdownPct: z.number().min(0).max(100).optional(),
+  dailyLossLimitPct: z.number().min(0).max(100).optional(),
+  minTradingDays: z.number().int().min(0).max(365).optional(),
+  durationDays: z.number().int().min(1).max(365).optional(),
+  consistencyRulePct: z.number().min(0).max(100).optional(),
+});
+
+const PLAN_RULE_COLUMNS = {
+  profitTargetPhase1Pct: "profit_target_phase1_pct",
+  profitTargetPhase2Pct: "profit_target_phase2_pct",
+  maxDrawdownPct: "max_drawdown_pct",
+  dailyLossLimitPct: "daily_loss_limit_pct",
+  minTradingDays: "min_trading_days",
+  durationDays: "duration_days",
+  consistencyRulePct: "consistency_rule_pct",
+};
+
+app.patch("/api/plans/:id", requireAuth, requireRole("admin"), async (req, res) => {
+  const parsed = planRulesSchema.safeParse(req.body ?? {});
+  if (!parsed.success) {
+    return res.status(400).json({ message: parsed.error.issues[0]?.message ?? "Invalid payload." });
+  }
+
+  const planRow = await one("SELECT * FROM plans WHERE id = $1", [req.params.id]);
+  if (!planRow) return res.status(404).json({ message: "Plan not found." });
+
+  const updates = [];
+  const values = [];
+  let idx = 1;
+  for (const [field, column] of Object.entries(PLAN_RULE_COLUMNS)) {
+    const value = parsed.data[field];
+    if (value === undefined) continue;
+    updates.push(`${column} = $${idx++}`);
+    values.push(value);
+  }
+  if (updates.length === 0) return res.status(400).json({ message: "Nothing to update." });
+
+  updates.push(`updated_at = $${idx++}`);
+  values.push(nowISO(), req.params.id);
+  await query(`UPDATE plans SET ${updates.join(", ")} WHERE id = $${idx}`, values);
+
+  await audit(req.authUser.id, "UPDATE_PLAN_RULES", "plan", req.params.id, parsed.data);
+
+  // Rules changed, so every live account is graded again right away rather than
+  // waiting for the next result to be recorded.
+  const fresh = await one("SELECT * FROM plans WHERE id = $1", [req.params.id]);
+  const plan = mapPlanRow(fresh);
+  const affected = await many("SELECT id FROM accounts WHERE plan_id = $1", [req.params.id]);
+  for (const row of affected) {
+    await reevaluateAccount(row.id).catch((error) => {
+      console.error("[Plan rules] re-evaluation failed for", row.id, error?.message ?? error);
+    });
+  }
+
+  res.json({ plan, reevaluatedAccounts: affected.length });
 });
 
 // ── Client-facing endpoints (any authenticated user) ──────────────────
@@ -2218,6 +2287,47 @@ app.post("/api/submissions/:id/release-payment", requireAuth, requireRole("admin
 
   const bundle = await getSubmissionBundleByCode(applicationRow.submission_code);
   res.json(bundle);
+});
+
+/**
+ * Closes (or reopens) the public tracking page of one application.
+ *
+ * Rotating the code is what actually removes access: the old URL may already be
+ * in a browser history, a chat, or an inbox, and only a new code makes it dead.
+ */
+app.post("/api/submissions/:id/public-tracking", requireAuth, requireRole("admin"), async (req, res) => {
+  const disabled = req.body?.disabled !== false;
+  const rotateCode = req.body?.rotateCode === true;
+
+  const row = await one("SELECT * FROM applications WHERE id = $1", [req.params.id]);
+  if (!row) return res.status(404).json({ message: "Submission not found." });
+
+  let submissionCode = row.submission_code;
+  if (rotateCode) {
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const candidate = createSubmissionCodeFromDocument();
+      const clash = await one("SELECT id FROM applications WHERE submission_code = $1", [candidate]);
+      if (!clash) {
+        submissionCode = candidate;
+        break;
+      }
+    }
+    if (submissionCode === row.submission_code) {
+      return res.status(500).json({ message: "Não foi possível gerar um código novo." });
+    }
+  }
+
+  await query(
+    "UPDATE applications SET public_tracking_disabled = $1, submission_code = $2, updated_at = $3 WHERE id = $4",
+    [disabled, submissionCode, nowISO(), req.params.id],
+  );
+
+  await audit(req.authUser.id, "SET_PUBLIC_TRACKING", "application", req.params.id, {
+    disabled,
+    rotated: rotateCode,
+  });
+
+  res.json({ ok: true, disabled, submissionCode });
 });
 
 app.post("/api/submissions/:id/provision-access", requireAuth, requireRole("admin"), async (req, res) => {

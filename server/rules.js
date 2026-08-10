@@ -11,6 +11,45 @@ function stdDev(values) {
   return Math.sqrt(variance);
 }
 
+/**
+ * The consistency rule.
+ *
+ * No single day may be worth more than `consistencyRulePct` of the total
+ * profit. A trader who makes the whole target in one session has not shown a
+ * method, so the target stops being a fixed number and becomes
+ * `bestDay / rulePct` — reachable only by adding more, smaller days. The best
+ * day is never punished and never erased: it just stops being enough on its own.
+ *
+ * Modelled on the rule Tradeify enforces, and it never fails an account —
+ * it only withholds the pass.
+ */
+export function buildConsistency(account, plan) {
+  const rulePct = Number(plan.consistencyRulePct ?? 0);
+  const totalProfit = account.balance - account.initialBalance;
+  const series = account.performanceSeries ?? [];
+  const bestDayProfit = series.reduce((best, point) => Math.max(best, point.pnl ?? 0), 0);
+
+  // No rule, no winning day, or nothing gained yet: nothing to enforce.
+  if (rulePct <= 0 || bestDayProfit <= 0) {
+    return {
+      consistencyRulePct: rulePct,
+      bestDayProfit,
+      consistencyPct: 0,
+      requiredTotalProfit: 0,
+      isConsistencyMet: true,
+    };
+  }
+
+  const requiredTotalProfit = bestDayProfit / (rulePct / 100);
+  return {
+    consistencyRulePct: rulePct,
+    bestDayProfit,
+    consistencyPct: totalProfit > 0 ? (bestDayProfit / totalProfit) * 100 : 100,
+    requiredTotalProfit,
+    isConsistencyMet: totalProfit >= requiredTotalProfit,
+  };
+}
+
 export function buildRiskSnapshot(account, plan, nowISO = new Date().toISOString()) {
   const currentProfit = account.balance - account.initialBalance;
   const profitPct = (currentProfit / account.initialBalance) * 100;
@@ -26,6 +65,12 @@ export function buildRiskSnapshot(account, plan, nowISO = new Date().toISOString
   const endDateMs = new Date(account.endDate).getTime();
   const nowMs = new Date(nowISO).getTime();
 
+  const consistency = buildConsistency(account, plan);
+  const nominalTargetMoney = (targetPct / 100) * account.initialBalance;
+  // The number the trader actually has to reach: whichever is higher.
+  const effectiveTargetMoney = Math.max(nominalTargetMoney, consistency.requiredTotalProfit);
+  const effectiveTargetPct = (effectiveTargetMoney / account.initialBalance) * 100;
+
   return {
     profitPct,
     targetPct,
@@ -37,7 +82,15 @@ export function buildRiskSnapshot(account, plan, nowISO = new Date().toISOString
     isDailyLimitBreached: account.todayPnl <= -dailyLossLimit,
     isHardBreach: currentDrawdownAmount >= maxAllowedLoss,
     isTimeout: nowMs > endDateMs,
-    isPhaseTargetMet: profitPct >= targetPct && account.daysTraded >= plan.minTradingDays,
+    ...consistency,
+    nominalTargetMoney,
+    effectiveTargetMoney,
+    effectiveTargetPct,
+    remainingToEffectiveTarget: Math.max(0, effectiveTargetMoney - currentProfit),
+    isPhaseTargetMet:
+      currentProfit >= effectiveTargetMoney &&
+      profitPct >= targetPct &&
+      account.daysTraded >= plan.minTradingDays,
   };
 }
 
@@ -124,12 +177,14 @@ export function buildAccountAnalytics(account, plan, nowISO = new Date().toISOSt
   const averageDailyPnl = totalDays ? pnlSeries.reduce((a, b) => a + b, 0) / totalDays : 0;
   const pnlVolatility = stdDev(pnlSeries);
 
-  const targetMoney = (snapshot.targetPct / 100) * account.initialBalance;
+  // Progress is measured against the target the trader actually has to reach,
+  // so a single huge day does not read as "almost done".
+  const targetMoney = snapshot.effectiveTargetMoney;
   const currentProfitMoney = account.balance - account.initialBalance;
   const remainingMoney = Math.max(0, targetMoney - currentProfitMoney);
   const projectedDaysToTarget = averageDailyPnl > 0 ? Math.ceil(remainingMoney / averageDailyPnl) : null;
 
-  const progressScore = clamp((snapshot.profitPct / snapshot.targetPct) * 100, 0, 100);
+  const progressScore = clamp(targetMoney > 0 ? (currentProfitMoney / targetMoney) * 100 : 0, 0, 100);
   const drawdownUsePct = snapshot.maxAllowedLoss > 0 ? ((snapshot.maxAllowedLoss - snapshot.remainingDrawdownBeforeBreach) / snapshot.maxAllowedLoss) * 100 : 100;
   const riskDisciplineScore = clamp(100 - drawdownUsePct * 1.1, 0, 100);
   const volatilityPenalty = account.initialBalance > 0 ? (pnlVolatility / account.initialBalance) * 1500 : 0;

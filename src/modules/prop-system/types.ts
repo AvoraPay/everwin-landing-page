@@ -49,6 +49,8 @@ export interface PlanTemplate {
   dailyLossLimitPct: number;
   minTradingDays: number;
   durationDays: number;
+  /** Max share of total profit a single day may represent. 0 disables it. */
+  consistencyRulePct?: number;
 }
 
 export interface PropAccount {
@@ -102,6 +104,19 @@ export interface RiskSnapshot {
   isHardBreach: boolean;
   isTimeout: boolean;
   isPhaseTargetMet: boolean;
+
+  /* Consistency — the single-day share of total profit. */
+  consistencyRulePct: number;
+  bestDayProfit: number;
+  consistencyPct: number;
+  /** Total profit needed so the best day fits inside the rule. */
+  requiredTotalProfit: number;
+  isConsistencyMet: boolean;
+  nominalTargetMoney: number;
+  /** The target the trader actually has to reach — it grows with the best day. */
+  effectiveTargetMoney: number;
+  effectiveTargetPct: number;
+  remainingToEffectiveTarget: number;
 }
 
 export interface AccountAnalytics {
@@ -160,6 +175,8 @@ export interface PropSubmission {
   paidAt?: string;
   reviewedAt?: string;
   adminNotes?: string;
+  /** True hides the public tracking page for this application. */
+  publicTrackingDisabled?: boolean;
   createdAt: string;
   updatedAt: string;
 }
