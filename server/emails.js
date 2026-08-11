@@ -310,7 +310,7 @@ async function sendMail({ to, subject, html, text }) {
   }
 
   const sender = await resolveSender();
-  return resend.emails.send({
+  const result = await resend.emails.send({
     from: sender.from,
     to: Array.isArray(to) ? to : [to],
     subject,
@@ -318,6 +318,21 @@ async function sendMail({ to, subject, html, text }) {
     text,
     ...(sender.replyTo ? { replyTo: sender.replyTo } : {}),
   });
+
+  // The SDK reports API failures in `error` instead of throwing. Returning it
+  // untouched is how an unverified sender domain got logged as "sent" for every
+  // message the platform ever produced — nothing reached anyone, and nothing
+  // said so. A refusal has to be loud.
+  if (result?.error) {
+    const detail = result.error.message ?? JSON.stringify(result.error);
+    throw new Error(`Resend recusou o envio de "${sender.from}": ${detail}`);
+  }
+
+  if (!result?.data?.id) {
+    throw new Error(`Resend não devolveu um id para "${subject}" — envio não confirmado.`);
+  }
+
+  return result;
 }
 
 /** Builds both parts from one description and hands them to Resend. */
