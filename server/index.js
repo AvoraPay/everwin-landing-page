@@ -88,11 +88,14 @@ import { createCheckoutSession, isStripeEnabled, verifyStripeWebhook } from "./s
 import {
   blockPlatformUser,
   fetchPlatformUser,
+  fetchPlatformUserDetails,
+  fetchPlatformUsers,
   getAdminToken,
   getWebhookSecret,
   provisionTradingAccount,
   resetPlatformPassword,
 } from "./everwinTradeApi.js";
+import { buildDailyPerformance, selectBrokerAccount } from "./brokerSync.js";
 
 const app = express();
 app.set("trust proxy", 1); // Trust first proxy (Vercel, CloudFlare, etc.)
@@ -1110,38 +1113,72 @@ async function runDailyAccountSync(triggerType = "system") {
       INSERT INTO sync_runs (id, trigger_type, status, notes, account_count, started_at)
       VALUES ($1,$2,'running',$3,0,$4)
     `,
-    [runId, triggerType, "Daily account snapshot sync placeholder", startedAt],
+    [runId, triggerType, "Broker account reconciliation", startedAt],
   );
 
   const plans = await getPlans();
   const accounts = await getAccounts({ includeSecrets: true });
+  const directoryResponse = await fetchPlatformUsers();
+  const platformUsers = directoryResponse.users ?? directoryResponse.data?.users ?? directoryResponse.data ?? [];
+  let syncedCount = 0;
+  const failures = [];
 
   for (const account of accounts) {
     const plan = plans.find((item) => item.id === account.planId);
     if (!plan) continue;
+    try {
+      const lookupEmail = String(account.platformEmail ?? account.platformLogin ?? "").toLowerCase();
+      const platformUser = account.platformUserId
+        ? platformUsers.find((user) => user.id === account.platformUserId)
+        : platformUsers.find((user) => String(user.email ?? "").toLowerCase() === lookupEmail);
+      if (!platformUser?.id) throw new Error("platform_user_not_found");
 
-    const point = {
-      date: nowISO().slice(0, 10),
-      pnl: account.todayPnl,
-      balance: account.balance,
-      phase: account.phase,
-      breachedDailyLimit: account.todayPnl <= -((account.initialBalance * plan.dailyLossLimitPct) / 100),
-    };
+      const detailsResponse = await fetchPlatformUserDetails(platformUser.id);
+      const details = detailsResponse.data ?? detailsResponse;
+      const trades = details.trading?.allTrades ?? [];
+      const brokerAccount = selectBrokerAccount(details.user?.accounts ?? platformUser.accounts ?? [], trades, {
+        currency: plan.currency,
+        platformAccountId: account.platformAccountId,
+      });
+      if (!brokerAccount?.id) throw new Error("platform_account_not_found_or_ambiguous");
 
-    account.performanceSeries = appendPerformancePoint(account.performanceSeries, point);
-    const evaluated = evaluateAccount(
-      {
-        ...account,
-        syncStatus: "synced",
-        lastSyncedAt: nowISO(),
-      },
-      plan,
-      nowISO(),
-    );
+      const dailyLimit = (account.initialBalance * plan.dailyLossLimitPct) / 100;
+      const points = buildDailyPerformance(trades, {
+        accountId: brokerAccount.id,
+        initialBalance: account.initialBalance,
+        phase: account.phase,
+        dailyLossLimit: dailyLimit,
+        timezone: "America/Fortaleza",
+      });
 
-    await saveAccount(evaluated);
-    await upsertPerformancePoint(evaluated.id, point);
-    await notifyAccountStatusChange({ account: evaluated, previousStatus: account.status });
+      // Rebuild derived daily data from the broker's immutable trade history so
+      // corrected/reverted trades cannot leave stale PnL behind.
+      await withTransaction(async (trx) => {
+        await trx.query("DELETE FROM performance_points WHERE account_id = $1", [account.id]);
+        for (const point of points) {
+          await trx.query(
+            `INSERT INTO performance_points (id, account_id, date, pnl, balance, phase, breached_daily_limit, created_at)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+            [uid("point"), account.id, point.date, point.pnl, point.balance, point.phase, point.breachedDailyLimit, nowISO()],
+          );
+        }
+        await trx.query(
+          `UPDATE accounts
+              SET platform_user_id = $1, platform_account_id = $2, platform_email = COALESCE(platform_email, $3),
+                  sync_status = 'synced', last_synced_at = $4, updated_at = $4
+            WHERE id = $5`,
+          [platformUser.id, brokerAccount.id, platformUser.email ?? null, nowISO(), account.id],
+        );
+      });
+
+      await recalcAccountFromSeries({ id: account.id, initial_balance: account.initialBalance });
+      await reevaluateAccount(account.id);
+      syncedCount += 1;
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "unknown_sync_error";
+      failures.push(`${account.accountId}:${reason}`);
+      await query("UPDATE accounts SET sync_status = 'failed', updated_at = $1 WHERE id = $2", [nowISO(), account.id]);
+    }
   }
 
   await query(
@@ -1149,13 +1186,14 @@ async function runDailyAccountSync(triggerType = "system") {
       UPDATE sync_runs
       SET status = 'completed',
           account_count = $1,
-          finished_at = $2
-      WHERE id = $3
+          notes = $2,
+          finished_at = $3
+      WHERE id = $4
     `,
-    [accounts.length, nowISO(), runId],
+    [syncedCount, failures.length ? `Synced ${syncedCount}; failed ${failures.join(", ")}` : `Synced ${syncedCount}`, nowISO(), runId],
   );
 
-  await audit(null, "DAILY_ACCOUNT_SYNC", "sync", runId, { triggerType, accounts: accounts.length });
+  await audit(null, "DAILY_ACCOUNT_SYNC", "sync", runId, { triggerType, accounts: syncedCount, failures: failures.length });
 }
 
 const loginSchema = z.object({
@@ -4115,6 +4153,16 @@ app.post("/api/platform-users/:id/reset-password", requireAuth, requireRole("adm
 });
 
 /* ─── Vercel Cron Endpoints ─── */
+
+app.post("/api/admin/sync", requireAuth, requireRole("admin"), async (req, res) => {
+  try {
+    await runDailyAccountSync("admin");
+    res.json({ ok: true, job: "broker-sync" });
+  } catch (error) {
+    console.error("Admin broker sync failed:", error);
+    res.status(502).json({ message: "Broker sync failed." });
+  }
+});
 
 function requireCronAuth(req, res) {
   // Without a secret the comparison used to read "Bearer undefined", which any

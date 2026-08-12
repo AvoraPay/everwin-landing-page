@@ -1,0 +1,56 @@
+version: 1
+name: prop-broker-sync
+mode: yaml-step
+description: "Audita, implementa e verifica a sincronização automática entre a corretora Everwin e o portal Prop."
+params:
+  broker_api: "https://api.everwin.capital"
+  portal_api: "https://www.everwin.capital/api"
+steps:
+  - id: inspect-contract
+    name: Inspecionar contrato real
+    prompt: "Inspecione de forma somente leitura os endpoints administrativos em {{ broker_api }}. Não registre tokens, senhas, cookies ou dados pessoais. Atualize o relatório com autenticação, usuários, contas e trades disponíveis."
+    produces:
+      - artifacts/broker-contract.md
+    verify:
+      policy: content-heuristic
+      minSize: 400
+
+  - id: verify-auth
+    name: Verificar autenticação automática
+    prompt: "Valide login de serviço, refresh token rotativo e retry único após HTTP 401. Confirme que nenhum segredo é persistido no repositório ou impresso."
+    requires:
+      - inspect-contract
+    context_from:
+      - inspect-contract
+    produces:
+      - artifacts/auth-verification.md
+    verify:
+      policy: shell-command
+      command: "node --check server/everwinTradeApi.js"
+
+  - id: run-sync
+    name: Executar sincronização controlada
+    prompt: "Execute uma sincronização controlada contra {{ portal_api }}, confirme vínculo por platform user/account id, reconstrua resultados diários e registre falhas por conta sem interromper as demais."
+    requires:
+      - verify-auth
+    context_from:
+      - inspect-contract
+      - verify-auth
+    produces:
+      - artifacts/sync-result.md
+    verify:
+      policy: shell-command
+      command: "node --test server/accountReadiness.test.js server/brokerSync.test.js"
+
+  - id: production-check
+    name: Verificar produção
+    prompt: "Confirme que contas sincronizadas exibem saldo, PnL, dias e limites atualizados; contas sem provisionamento permanecem pendentes. Não envie e-mails de teste."
+    requires:
+      - run-sync
+    context_from:
+      - run-sync
+    produces:
+      - artifacts/production-check.md
+    verify:
+      policy: prompt-verify
+      prompt: "A evidência demonstra autenticação renovável, sincronização idempotente e estados seguros para contas não provisionadas? Responda PASS ou FAIL com justificativa."

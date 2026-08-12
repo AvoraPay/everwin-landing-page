@@ -7,14 +7,76 @@
 import { one } from "./db.js";
 
 const EVERWIN_API_BASE = process.env.EVERWIN_API_BASE ?? "https://api.everwin.capital";
+let runtimeAccessToken = "";
+let runtimeRefreshToken = "";
+let authInFlight = null;
 
 /** All prop trading accounts live under this domain. */
 export const PROP_ACCOUNT_DOMAIN = process.env.PROP_ACCOUNT_DOMAIN ?? "everwin.capital";
 
 /** Reads admin bearer token from DB system_settings (admin can update it in the panel) */
-export async function getAdminToken() {
+async function getStoredAdminToken() {
   const row = await one("SELECT value FROM system_settings WHERE key = $1", ["everwin_admin_bearer"]);
   return row?.value ?? process.env.EVERWIN_ADMIN_BEARER ?? "";
+}
+
+function tokenIsFresh(token) {
+  try {
+    const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString("utf8"));
+    return Number(payload.exp ?? 0) * 1000 > Date.now() + 60_000;
+  } catch {
+    return false;
+  }
+}
+
+async function authenticateWithPassword() {
+  const email = process.env.EVERWIN_ADMIN_EMAIL?.trim();
+  const password = process.env.EVERWIN_ADMIN_PASSWORD;
+  if (!email || !password) return "";
+
+  const response = await fetch(`${EVERWIN_API_BASE}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data.token) throw new Error("Everwin service login failed.");
+  runtimeAccessToken = data.token;
+  runtimeRefreshToken = data.refreshToken ?? "";
+  return runtimeAccessToken;
+}
+
+async function refreshAuthentication() {
+  if (!runtimeRefreshToken) return "";
+  const response = await fetch(`${EVERWIN_API_BASE}/api/auth/refresh`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refreshToken: runtimeRefreshToken }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data.token) return "";
+  runtimeAccessToken = data.token;
+  runtimeRefreshToken = data.refreshToken ?? runtimeRefreshToken;
+  return runtimeAccessToken;
+}
+
+/**
+ * Returns a live admin token without persisting short-lived JWTs. Production
+ * credentials live only in encrypted environment variables; cold starts log in
+ * again, warm instances rotate the refresh token automatically.
+ */
+export async function getAdminToken({ force = false } = {}) {
+  if (!force && tokenIsFresh(runtimeAccessToken)) return runtimeAccessToken;
+  if (!force) {
+    const refreshed = await refreshAuthentication();
+    if (refreshed) return refreshed;
+  }
+
+  if (process.env.EVERWIN_ADMIN_EMAIL && process.env.EVERWIN_ADMIN_PASSWORD) {
+    if (!authInFlight) authInFlight = authenticateWithPassword().finally(() => { authInFlight = null; });
+    return authInFlight;
+  }
+  return getStoredAdminToken();
 }
 
 export async function getWebhookSecret() {
@@ -22,7 +84,7 @@ export async function getWebhookSecret() {
   return row?.value ?? process.env.EVERWIN_WEBHOOK_SECRET ?? "";
 }
 
-async function adminApi(method, path, body) {
+async function adminApi(method, path, body, allowRetry = true) {
   const token = await getAdminToken();
   if (!token) {
     throw new Error("Everwin admin bearer token not configured. Set it in Admin > Configurações.");
@@ -45,6 +107,12 @@ async function adminApi(method, path, body) {
     res = await fetch(`${EVERWIN_API_BASE}${path}`, init);
   } catch (err) {
     throw new Error(`Network error calling Everwin API: ${err instanceof Error ? err.message : String(err)}`);
+  }
+
+  if (res.status === 401 && allowRetry && process.env.EVERWIN_ADMIN_EMAIL && process.env.EVERWIN_ADMIN_PASSWORD) {
+    runtimeAccessToken = "";
+    const replacement = await getAdminToken({ force: true });
+    if (replacement) return adminApi(method, path, body, false);
   }
 
   const data = await res.json().catch(() => ({}));
@@ -95,6 +163,14 @@ export async function blockPlatformUser(userId, reason) {
 
 export async function fetchPlatformUser(userId) {
   return adminApi("GET", `/api/admin/users/${userId}`);
+}
+
+export async function fetchPlatformUsers() {
+  return adminApi("GET", "/api/admin/users?page=1&limit=5000");
+}
+
+export async function fetchPlatformUserDetails(userId) {
+  return adminApi("GET", `/api/admin/users/${userId}/details?noCache=1`);
 }
 
 export async function unblockPlatformUser(userId, reason) {

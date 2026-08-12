@@ -309,6 +309,9 @@ async function createSchema() {
   await exec(`
     ALTER TABLE users ADD COLUMN IF NOT EXISTS portal_password_revealed_at TEXT;
   `);
+  await exec(`
+    ALTER TABLE accounts ADD COLUMN IF NOT EXISTS platform_account_id TEXT;
+  `);
 
   await exec(`
     CREATE TABLE IF NOT EXISTS system_settings (
@@ -628,6 +631,7 @@ export function mapAccountRow(row, includeSecrets = false) {
     platformPassword: includeSecrets ? readSecret(row.platform_password_enc) : "••••••••",
     brokerName: row.broker_name ?? undefined,
     platformUserId: row.platform_user_id ?? undefined,
+    platformAccountId: row.platform_account_id ?? undefined,
     platformEmail: row.platform_email ?? undefined,
     phase: Number(row.phase),
     status,
