@@ -43,8 +43,10 @@ const COPY = {
     waitlistTitle: "Candidatura em análise",
     waitlistDesc: "Sua candidatura foi recebida e está sendo analisada pela nossa equipe. Você receberá um e-mail com o link de pagamento assim que for aprovada.",
     waitlistHint: "Guarde o código abaixo para acompanhar o andamento.",
-    accessReady: "Seu acesso Everwin já está liberado",
-    accessReadyDesc: "Seu login foi provisionado. Use o portal para entrar na operação e acompanhar as contas vinculadas.",
+    accessReady: "Seu acesso ao portal está liberado",
+    accessReadyDesc: "Você já pode entrar no portal e acompanhar o andamento da liberação da sua conta operacional.",
+    operationalPending: "Acesso à Prop ainda não liberado",
+    operationalPendingDesc: "Seu pagamento foi confirmado e sua conta operacional está sendo preparada. Você receberá as credenciais por e-mail assim que o acesso à plataforma de trading for liberado.",
     goLogin: "Ir para o login",
     summary: "Resumo da candidatura",
     timeline: "Linha do tempo",
@@ -102,8 +104,10 @@ const COPY = {
     waitlistTitle: "Application under review",
     waitlistDesc: "Your application has been received and is being reviewed by our team. You will receive an email with the payment link once it is approved.",
     waitlistHint: "Save the code below to track your application.",
-    accessReady: "Your Everwin access is now active",
-    accessReadyDesc: "Your login has been provisioned. Use the portal to enter operations and monitor linked accounts.",
+    accessReady: "Your portal access is active",
+    accessReadyDesc: "You can already sign in to track the release of your operational account.",
+    operationalPending: "Prop access has not been released yet",
+    operationalPendingDesc: "Your payment is confirmed and your operational account is being prepared. Trading platform credentials will be emailed as soon as access is released.",
     goLogin: "Go to login",
     summary: "Application summary",
     timeline: "Timeline",
@@ -161,8 +165,10 @@ const COPY = {
     waitlistTitle: "Solicitud en análisis",
     waitlistDesc: "Su solicitud fue recibida y está siendo analizada por nuestro equipo. Recibirá un e-mail con el enlace de pago cuando sea aprobada.",
     waitlistHint: "Guarde el código a continuación para dar seguimiento.",
-    accessReady: "Su acceso Everwin ya está liberado",
-    accessReadyDesc: "Su login ya fue provisionado. Use el portal para entrar a la operación y monitorear las cuentas vinculadas.",
+    accessReady: "Su acceso al portal está liberado",
+    accessReadyDesc: "Ya puede ingresar al portal y acompañar la liberación de su cuenta operativa.",
+    operationalPending: "El acceso a Prop aún no está liberado",
+    operationalPendingDesc: "Su pago fue confirmado y su cuenta operativa está siendo preparada. Recibirá las credenciales por e-mail cuando se libere el acceso a la plataforma de trading.",
     goLogin: "Ir al login",
     summary: "Resumen de la candidatura",
     timeline: "Línea de tiempo",
@@ -427,6 +433,13 @@ export default function PropSubmissionStatusPage() {
                       </div>
                     </div>
                   )}
+
+                  {bundle.application.paymentStatus === "approved" && !bundle.operationalAccessReady ? (
+                    <div className="mt-6 rounded-xl border border-amber-400/30 bg-amber-50 p-5">
+                      <p className="font-bricolage_grotesque text-xl font-bold text-slate-900">{copy.operationalPending}</p>
+                      <p className="mt-2 font-bricolage_grotesque text-sm leading-6 text-slate-600">{copy.operationalPendingDesc}</p>
+                    </div>
+                  ) : null}
 
                   {bundle.canAccessPortal ? (
                     <div className="mt-6 rounded-xl border border-sky-400/20 bg-sky-50 p-5">

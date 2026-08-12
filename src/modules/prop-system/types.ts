@@ -211,6 +211,8 @@ export interface PublicSubmissionBundle {
   accounts: PropAccount[];
   loginUrl: string;
   canAccessPortal: boolean;
+  /** True only after a real broker user is linked and deliverable credentials exist. */
+  operationalAccessReady?: boolean;
   /** True once a portal user exists — the password itself never travels here. */
   hasPortalPassword?: boolean;
   /** False once the credentials were delivered: the page opens, the data does not. */

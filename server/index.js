@@ -42,6 +42,7 @@ import {
   verifyRefreshToken,
 } from "./security.js";
 import { appendPerformancePoint, buildAccountAnalytics, evaluateAccount } from "./rules.js";
+import { derivePublicSubmissionStatus, isTradingAccountProvisioned } from "./accountReadiness.js";
 import {
   addDays,
   addHours,
@@ -838,7 +839,7 @@ async function autoProvisionFullAccount(application) {
 
   // Link user to application
   await query(
-    `UPDATE applications SET portal_user_id = $1, status = 'account_ready', reviewed_at = COALESCE(reviewed_at, $2), updated_at = $3 WHERE id = $4`,
+    `UPDATE applications SET portal_user_id = $1, reviewed_at = COALESCE(reviewed_at, $2), updated_at = $3 WHERE id = $4`,
     [portalUser.id, nowISO(), nowISO(), application.id],
   );
 
@@ -912,6 +913,16 @@ async function autoProvisionFullAccount(application) {
     }
   }
 
+  // A portal row and locally generated credentials do not prove that a broker
+  // account exists. Only expose "Conta pronta" after the broker returned a
+  // stable user id (or a pool account with one was assigned).
+  const provisionedAccount = await one("SELECT * FROM accounts WHERE id = $1", [accountInternalId]);
+  const operationalAccessReady = isTradingAccountProvisioned(provisionedAccount);
+  await query(
+    "UPDATE applications SET status = $1, updated_at = $2 WHERE id = $3",
+    [operationalAccessReady ? "account_ready" : "payment_approved", nowISO(), application.id],
+  );
+
   // 4. Send access-ready email (best-effort)
   try {
     const subject = buildPortalAccessSubject({ email: portalUser.email, locale: application.locale });
@@ -957,7 +968,7 @@ async function deliverTradingCredentials({ accountInternalId, application, porta
   const recipient = application?.email ?? portalUser?.email;
   const subject = buildTradingAccountDeliveredSubject({ accountId: row.account_id }, application?.locale);
 
-  if (!row.platform_login || !row.platform_password_enc) {
+  if (!isTradingAccountProvisioned(row)) {
     await recordCommunication({
       applicationId: application?.id,
       userId: portalUser?.id,
@@ -965,9 +976,9 @@ async function deliverTradingCredentials({ accountInternalId, application, porta
       recipient,
       subject,
       status: "skipped",
-      payload: { accountId: row.account_id, skippedReason: "account_without_platform_credentials" },
+      payload: { accountId: row.account_id, skippedReason: "broker_account_not_provisioned" },
     });
-    console.warn(`[AutoProvision] ${row.account_id} has no platform credentials — credentials e-mail skipped`);
+    console.warn(`[AutoProvision] ${row.account_id} is not linked to a broker user — credentials e-mail skipped`);
     return;
   }
 
@@ -1557,7 +1568,10 @@ app.get("/api/public/submissions/:code", statusLimiter, async (req, res) => {
 
   // The tracking page shows an account's identity and state, nothing more.
   // Balances, internal notes and the broker's user id stay behind the login.
-  const safeAccounts = (bundle.accounts ?? []).map((account) => ({
+  const operationalAccounts = (bundle.accounts ?? []).filter(isTradingAccountProvisioned);
+  const operationalAccessReady = operationalAccounts.length > 0;
+  const publicStatus = derivePublicSubmissionStatus(bundle.application.status, bundle.accounts ?? []);
+  const safeAccounts = operationalAccounts.map((account) => ({
     id: account.id,
     accountId: account.accountId,
     planId: account.planId,
@@ -1599,7 +1613,7 @@ app.get("/api/public/submissions/:code", statusLimiter, async (req, res) => {
     locale: bundle.application.locale,
     amount: bundle.application.amount,
     currency: bundle.application.currency,
-    status: bundle.application.status,
+    status: publicStatus,
     paymentStatus: bundle.application.paymentStatus,
     paymentDueAt: bundle.application.paymentDueAt,
     submittedAt: bundle.application.submittedAt,
@@ -1622,7 +1636,8 @@ app.get("/api/public/submissions/:code", statusLimiter, async (req, res) => {
     payment: safePayment,
     accounts: safeAccounts,
     loginUrl: buildLoginUrl(),
-    canAccessPortal: Boolean(bundle.user && ["access_ready", "account_ready"].includes(bundle.application.status)),
+    canAccessPortal: Boolean(bundle.user),
+    operationalAccessReady,
     hasPortalPassword: Boolean(bundle.user),
     // The page always renders. What it will not do is hand the credentials to
     // whoever guesses the email — once delivered, that door stays shut.

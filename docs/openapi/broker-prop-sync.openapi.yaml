@@ -1,0 +1,188 @@
+openapi: 3.1.0
+info:
+  title: Everwin Broker Prop Sync API
+  version: 1.0.0
+servers:
+  - url: https://api.everwin.capital
+security:
+  - bearerAuth: []
+paths:
+  /api/admin/prop/v1/users:resolve:
+    get:
+      operationId: resolvePropUser
+      parameters:
+        - in: query
+          name: email
+          required: true
+          schema: { type: string, format: email }
+      responses:
+        "200":
+          description: Unique platform user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ResolvedUser" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /api/admin/prop/v1/users/{userId}/snapshot:
+    get:
+      operationId: getPropSnapshot
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: Current risk snapshot
+          headers:
+            Cache-Control:
+              schema: { type: string, const: no-store }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Snapshot" }
+        "404": { $ref: "#/components/responses/Error" }
+  /api/admin/prop/v1/users/{userId}/daily-results:
+    get:
+      operationId: listPropDailyResults
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - $ref: "#/components/parameters/FromDate"
+        - $ref: "#/components/parameters/ToDate"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Cursor-paginated daily results
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, nextCursor]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/DailyResult" }
+                  nextCursor: { type: [string, "null"] }
+  /api/admin/prop/v1/users/{userId}/trades:
+    get:
+      operationId: listPropTrades
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - in: query
+          name: from
+          required: true
+          schema: { type: string, format: date-time }
+        - in: query
+          name: to
+          required: true
+          schema: { type: string, format: date-time }
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Cursor-paginated trades
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items, nextCursor]
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Trade" }
+                  nextCursor: { type: [string, "null"] }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer }
+  parameters:
+    UserId:
+      in: path
+      name: userId
+      required: true
+      schema: { type: string }
+    FromDate:
+      in: query
+      name: from
+      required: true
+      schema: { type: string, format: date }
+    ToDate:
+      in: query
+      name: to
+      required: true
+      schema: { type: string, format: date }
+    Cursor:
+      in: query
+      name: cursor
+      schema: { type: string }
+    Limit:
+      in: query
+      name: limit
+      schema: { type: integer, minimum: 1, maximum: 200, default: 100 }
+  responses:
+    Error:
+      description: Request error
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+  schemas:
+    ResolvedUser:
+      type: object
+      required: [userId, email, status]
+      properties:
+        userId: { type: string }
+        email: { type: string, format: email }
+        status: { type: string, enum: [active, blocked] }
+    Snapshot:
+      type: object
+      required: [userId, asOf, timezone, currency, cashBalance, equity, realizedPnl, unrealizedPnl, dayStartEquity, dayLowEquity, dayHighEquity, openPositions, sequence]
+      properties:
+        userId: { type: string }
+        asOf: { type: string, format: date-time }
+        timezone: { type: string }
+        currency: { type: string, minLength: 3, maxLength: 3 }
+        cashBalance: { type: number }
+        equity: { type: number }
+        realizedPnl: { type: number }
+        unrealizedPnl: { type: number }
+        dayStartEquity: { type: number }
+        dayLowEquity: { type: number }
+        dayHighEquity: { type: number }
+        openPositions: { type: integer, minimum: 0 }
+        lastTradeAt: { type: [string, "null"], format: date-time }
+        sequence: { type: integer, minimum: 0 }
+    DailyResult:
+      type: object
+      required: [date, startEquity, endEquity, lowEquity, highEquity, realizedPnl, fees, trades, lastEventAt]
+      properties:
+        date: { type: string, format: date }
+        startEquity: { type: number }
+        endEquity: { type: number }
+        lowEquity: { type: number }
+        highEquity: { type: number }
+        realizedPnl: { type: number }
+        fees: { type: number }
+        trades: { type: integer, minimum: 0 }
+        lastEventAt: { type: string, format: date-time }
+    Trade:
+      type: object
+      required: [tradeId, status, openedAt, asset, side, quantity, realizedPnl, fees]
+      properties:
+        tradeId: { type: string }
+        status: { type: string, enum: [open, closed, cancelled] }
+        openedAt: { type: string, format: date-time }
+        closedAt: { type: [string, "null"], format: date-time }
+        asset: { type: string }
+        side: { type: string, enum: [buy, sell] }
+        quantity: { type: number }
+        openPrice: { type: number }
+        closePrice: { type: [number, "null"] }
+        realizedPnl: { type: number }
+        fees: { type: number }
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, requestId]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            requestId: { type: string }
