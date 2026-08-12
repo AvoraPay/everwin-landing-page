@@ -61,6 +61,15 @@ export function buildRiskSnapshot(account, plan, nowISO = new Date().toISOString
   const currentDrawdownAmount = account.initialBalance - account.balance;
   const remainingDrawdownBeforeBreach = maxAllowedLoss - currentDrawdownAmount;
   const remainingDailyLossBeforePause = dailyLossLimit + account.todayPnl;
+  const localToday = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Fortaleza",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(nowISO));
+  const todayPoint = (account.performanceSeries ?? []).find((point) => point.date === localToday);
+  const dailyLimitWasBreached = Boolean(todayPoint?.breachedDailyLimit);
+  const hardLimitWasBreached = Number(account.maxDrawdownHitPct ?? 0) >= Number(plan.maxDrawdownPct);
 
   const endDateMs = new Date(account.endDate).getTime();
   const nowMs = new Date(nowISO).getTime();
@@ -79,8 +88,8 @@ export function buildRiskSnapshot(account, plan, nowISO = new Date().toISOString
     dailyLossLimit,
     remainingDrawdownBeforeBreach,
     remainingDailyLossBeforePause,
-    isDailyLimitBreached: account.todayPnl <= -dailyLossLimit,
-    isHardBreach: currentDrawdownAmount >= maxAllowedLoss,
+    isDailyLimitBreached: dailyLimitWasBreached || account.todayPnl <= -dailyLossLimit,
+    isHardBreach: hardLimitWasBreached || currentDrawdownAmount >= maxAllowedLoss,
     isTimeout: nowMs > endDateMs,
     ...consistency,
     nominalTargetMoney,

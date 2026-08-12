@@ -29,9 +29,24 @@ test("aggregates completed real trades into local trading days", () => {
     {
       date: "2026-08-11",
       pnl: -15.75,
+      lowestPnl: -15.75,
       balance: 74984.25,
       phase: 1,
       breachedDailyLimit: false,
     },
   ]);
+});
+
+test("keeps an intraday breach even when later trades recover the day", () => {
+  const [point] = buildDailyPerformance(
+    [
+      { id: "loss", accountId: "real", status: "COMPLETED", type: "REAL", profit: "-4000", endTime: "2026-08-12T13:00:00.000Z" },
+      { id: "recovery", accountId: "real", status: "COMPLETED", type: "REAL", profit: "5000", endTime: "2026-08-12T14:00:00.000Z" },
+    ],
+    { accountId: "real", initialBalance: 75000, phase: 1, dailyLossLimit: 3750, timezone: "America/Fortaleza" },
+  );
+
+  assert.equal(point.pnl, 1000);
+  assert.equal(point.lowestPnl, -4000);
+  assert.equal(point.breachedDailyLimit, true);
 });

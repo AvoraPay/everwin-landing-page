@@ -170,6 +170,7 @@ async function createSchema() {
       account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
       date TEXT NOT NULL,
       pnl REAL NOT NULL,
+      lowest_pnl REAL NOT NULL DEFAULT 0,
       balance REAL NOT NULL,
       phase INTEGER NOT NULL,
       breached_daily_limit BOOLEAN NOT NULL DEFAULT FALSE,
@@ -231,6 +232,9 @@ async function createSchema() {
       started_at TEXT NOT NULL,
       finished_at TEXT
     );
+  `);
+  await exec(`
+    ALTER TABLE performance_points ADD COLUMN IF NOT EXISTS lowest_pnl REAL NOT NULL DEFAULT 0;
   `);
 
   await exec(`
@@ -717,7 +721,7 @@ export function mapPaymentRow(row) {
 export async function getPerformanceSeries(accountId) {
   const rows = await many(
     `
-      SELECT date, pnl, balance, phase, breached_daily_limit
+      SELECT date, pnl, lowest_pnl, balance, phase, breached_daily_limit
       FROM performance_points
       WHERE account_id = $1
       ORDER BY date ASC
@@ -728,6 +732,7 @@ export async function getPerformanceSeries(accountId) {
   return rows.map((row) => ({
     date: row.date,
     pnl: Number(row.pnl),
+    lowestPnl: Number(row.lowest_pnl ?? row.pnl),
     balance: Number(row.balance),
     phase: Number(row.phase),
     breachedDailyLimit: Boolean(row.breached_daily_limit),

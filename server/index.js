@@ -583,16 +583,17 @@ async function saveAccount(account) {
 async function upsertPerformancePoint(accountId, point) {
   await query(
     `
-      INSERT INTO performance_points (id, account_id, date, pnl, balance, phase, breached_daily_limit, created_at)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+      INSERT INTO performance_points (id, account_id, date, pnl, lowest_pnl, balance, phase, breached_daily_limit, created_at)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
       ON CONFLICT (account_id, date)
       DO UPDATE SET
         pnl = EXCLUDED.pnl,
+        lowest_pnl = EXCLUDED.lowest_pnl,
         balance = EXCLUDED.balance,
         phase = EXCLUDED.phase,
         breached_daily_limit = EXCLUDED.breached_daily_limit
     `,
-    [uid("point"), accountId, point.date, point.pnl, point.balance, point.phase, point.breachedDailyLimit, nowISO()],
+    [uid("point"), accountId, point.date, point.pnl, point.lowestPnl ?? Math.min(0, point.pnl), point.balance, point.phase, point.breachedDailyLimit, nowISO()],
   );
 }
 
@@ -1157,9 +1158,9 @@ async function runDailyAccountSync(triggerType = "system") {
         await trx.query("DELETE FROM performance_points WHERE account_id = $1", [account.id]);
         for (const point of points) {
           await trx.query(
-            `INSERT INTO performance_points (id, account_id, date, pnl, balance, phase, breached_daily_limit, created_at)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-            [uid("point"), account.id, point.date, point.pnl, point.balance, point.phase, point.breachedDailyLimit, nowISO()],
+            `INSERT INTO performance_points (id, account_id, date, pnl, lowest_pnl, balance, phase, breached_daily_limit, created_at)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+            [uid("point"), account.id, point.date, point.pnl, point.lowestPnl, point.balance, point.phase, point.breachedDailyLimit, nowISO()],
           );
         }
         await trx.query(
@@ -3228,12 +3229,20 @@ async function recalcAccountFromSeries(accountRow) {
   let worstDrawdownPct = 0;
 
   for (const point of ordered) {
+    const intradayLowBalance = running + Math.min(0, point.lowestPnl ?? point.pnl);
+    const intradayDrawdownPct = Math.max(0, ((initial - intradayLowBalance) / initial) * 100);
+    worstDrawdownPct = Math.max(worstDrawdownPct, intradayDrawdownPct);
     running += point.pnl;
     const drawdownPct = Math.max(0, ((initial - running) / initial) * 100);
     worstDrawdownPct = Math.max(worstDrawdownPct, drawdownPct);
   }
 
-  const today = nowISO().slice(0, 10);
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Fortaleza",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
   const todayPoint = ordered.find((p) => p.date === today);
 
   await query(

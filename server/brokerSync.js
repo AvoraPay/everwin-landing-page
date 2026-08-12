@@ -31,7 +31,8 @@ export function selectBrokerAccount(accounts = [], trades = [], { currency, plat
 
 export function buildDailyPerformance(trades = [], options) {
   const byDate = new Map();
-  for (const trade of trades) {
+  const orderedTrades = [...trades].sort((a, b) => String(a.endTime ?? "").localeCompare(String(b.endTime ?? "")));
+  for (const trade of orderedTrades) {
     if (
       trade.accountId !== options.accountId ||
       trade.status !== "COMPLETED" ||
@@ -43,20 +44,24 @@ export function buildDailyPerformance(trades = [], options) {
       continue;
     }
     const date = localDate(trade.endTime, options.timezone);
-    byDate.set(date, (byDate.get(date) ?? 0) + amount(trade.profit));
+    const day = byDate.get(date) ?? { pnl: 0, lowestPnl: 0 };
+    day.pnl += amount(trade.profit);
+    day.lowestPnl = Math.min(day.lowestPnl, day.pnl);
+    byDate.set(date, day);
   }
 
   let balance = options.initialBalance;
   return [...byDate.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, pnl]) => {
-      balance += pnl;
+    .map(([date, day]) => {
+      balance += day.pnl;
       return {
         date,
-        pnl,
+        pnl: day.pnl,
+        lowestPnl: day.lowestPnl,
         balance,
         phase: options.phase,
-        breachedDailyLimit: pnl <= -options.dailyLossLimit,
+        breachedDailyLimit: day.lowestPnl <= -options.dailyLossLimit,
       };
     });
 }
